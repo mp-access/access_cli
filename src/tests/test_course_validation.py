@@ -3,13 +3,13 @@
 import unittest
 from types import SimpleNamespace
 from importlib.resources import files
-# Reads contents with UTF-8 encoding and returns str.
 
 class CourseValidationTests(unittest.TestCase):
 
     def validator(self, directory):
         from access_cli_sealuzh.main import AccessValidator
-        args = SimpleNamespace(directory=str(directory), type="course")
+        args = SimpleNamespace(directory=str(directory),
+                               type="course", recursive=False)
         return AccessValidator(args)
 
     def test_valid_config(self):

@@ -11,6 +11,8 @@ def main():
         help = "Which type of config should be validated")
     parser.add_argument('-d', '--directory', 
         help = "path to directory containing the config")
+    parser.add_argument('-e', '--execute', action='store_true', default=False,
+        help = "when validating tasks, execute the run, test and grade commands")
     parser.add_argument('-v', '--verbose', action='store_true', default=False)
     parser.add_argument('-r', '--recursive', action='store_true', default=False,
         help = "recurse into nested structures (assignments/tasks) if applicable")

@@ -23,7 +23,7 @@ course_information_schema = {
 # - if referenced assignments exist and contain config.toml
 # - if override start is before override end
 # - if at least "en" information is given (restriction to be lifted later)
-# - if information conforms to information_schema
+# - if information conforms to course_information_schema
 # - if each file in global_files actually exists
 course_schema = {
     "slug":         {'required': True, 'type': 'string'},
@@ -39,5 +39,63 @@ course_schema = {
     "information":  {'required': True, 'type': 'dict'},
     "global_files": {                  'type': 'dict', 'keysrules': {
                      'allowed': ['visible', 'editable', 'grading', 'solution']}},
+}
+
+
+# Assignment information, which may come in any number of languages
+assignment_information_schema = {
+    "title":             {'required': True, 'type': 'string'}
+}
+
+# Assignment configuration
+# MANUALLY CHECK:
+# - if referenced task exist and contain config.toml
+# - if start is before end
+# - if at least "en" information is given (restriction to be lifted later)
+assignment_schema = {
+    "slug":  {'required': True, 'type': 'string'},
+    "start": {'required': True, 'type': 'datetime'}, # TODO: will not be required in the future
+    "end":   {'required': True, 'type': 'datetime'}, # TODO: will not be required in the future
+    "tasks": {'required': True, 'type': 'list',
+              'schema': {'type': 'string'}},
+    "information":  {'required': True, 'type': 'dict'},
+}
+
+task_information_schema = {
+    "title":             {'required': True, 'type': 'string'},
+    "instructions_file": {'required': True, 'type': 'string'}
+}
+
+# Task configuration
+# MANUALLY CHECK:
+# - if at least "en" information is given (restriction to be lifted later)
+# - if information conforms to assignment_information_schema
+# - if each file in files actually exists
+# - that none of the invisible, grading or solution files are editable
+# - that none of the grading or solution files are visible
+# - OPTIONALLY: that the run, test and grade commands execute correctly
+task_schema = {
+    "slug":         {'required': True, 'type': 'string'},
+    "authors":      {'required': True, 'type': 'list',
+                     'schema': {'type': 'string'}},
+    "license":      {'required': True, 'type': 'string'},
+    "max_attempts": {'required': True, 'type': 'integer'},
+    "refill":       {'required': False, 'type': 'integer'},
+    "max_points":   {'required': False, 'type': 'float'},
+    "information":  {'required': True, 'type': 'dict'},
+    "evaluator":    {'required': True, 'type': 'dict', 'schema':
+                    {'docker_image':  {'required': True, 'type': 'string'},
+                     'run_command':   {'required': True, 'type': 'string'},
+                     'grade_command': {'required': True, 'type': 'string'},
+                     'test_command':  {                  'type': 'string'}}},
+    "files":        {'required': True, 'type': 'dict', 'schema':
+                    {"visible":     {'required': True, 'type': 'list',
+                                     'schema': {'type': 'string'}},
+                     "editable":    {'required': True, 'type': 'list',
+                                     'schema': {'type': 'string'}},
+                     "grading":     {'required': True, 'type': 'list',
+                                     'schema': {'type': 'string'}},
+                     "solution":    {'required': True, 'type': 'list',
+                                     'schema': {'type': 'string'}}}}
 }
 
