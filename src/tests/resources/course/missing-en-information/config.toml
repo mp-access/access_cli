@@ -1,0 +1,18 @@
+slug = "access-mock-course"
+
+"assignments" = [
+]
+
+[visibility]
+default = "hidden"
+override = "registered"
+override_start = 2023-01-01T13:00:00
+override_end = 2028-01-01T13:00:00
+
+[information.de]
+title = "ACCESS Demo-Kurs"
+description = "Dieser Kurs demonstriert, wie man ACCESS-Kurse, -Übungen und -Aufgaben definiert."
+university = "Universität Zürich"
+period = "Frühlings-Semester 2023"
+
+

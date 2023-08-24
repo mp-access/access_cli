@@ -1,0 +1,13 @@
+slug = "access-mock-course"
+
+"assignments" = [ ]
+
+[visibility]
+default = "hidden"
+
+[information.en]
+title = "ACCESS Mock Course"
+description = "This course demonstrates how to define ACCESS courses, assignments and tasks."
+university = "University of Zurich"
+period = "Spring Semester 2023"
+

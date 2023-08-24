@@ -1,0 +1,24 @@
+slug = "access-mock-course"
+
+"assignments" = [
+]
+
+[visibility]
+default = "hidden"
+override = "registered"
+override_start = 2023-01-01T13:00:00
+override_end = 2028-01-01T13:00:00
+
+[information.en]
+title = "ACCESS Mock Course"
+description = "This course demonstrates how to define ACCESS courses, assignments and tasks."
+university = "University of Zurich"
+period = "Spring Semester 2023"
+
+
+# Invalid: global file does not exist
+[global_files]
+grading = [
+  "missing_global_file",
+]
+
