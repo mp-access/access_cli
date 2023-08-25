@@ -8,8 +8,10 @@ class AssignmentValidationTests(unittest.TestCase):
 
     def validator(self, directory):
         from access_cli_sealuzh.main import AccessValidator
-        args = SimpleNamespace(directory=str(directory),
-                               type="assignment", recursive=False)
+        args = SimpleNamespace(directory=str(directory), execute=False,
+                               run=None, test=None, verbose=False,
+                               grade_template=False, grade_solution=False,
+                               level="assignment", recursive=False)
         return AccessValidator(args)
 
     def test_valid_config(self):
@@ -38,7 +40,6 @@ class AssignmentValidationTests(unittest.TestCase):
     def test_missing_information_attributes(self):
         validator = self.validator(files('tests.resources.assignment').joinpath('missing-information-attributes'))
         valid, errors = validator.run()
-        print(errors)
         self.assertEqual(1, len(errors))
         self.assertIn("information schema errors", errors[0])
 

@@ -8,8 +8,10 @@ class RecursiveValidationTests(unittest.TestCase):
 
     def validator(self, directory):
         from access_cli_sealuzh.main import AccessValidator
-        args = SimpleNamespace(directory=str(directory),
-                               type="course", recursive=True)
+        args = SimpleNamespace(directory=str(directory), execute=False,
+                               run=None, test=None, verbose=False,
+                               grade_template=False, grade_solution=False,
+                               level="course", recursive=True)
         return AccessValidator(args)
 
     def test_valid_config(self):
@@ -22,5 +24,4 @@ class RecursiveValidationTests(unittest.TestCase):
         valid, errors = validator.run()
         self.assertEqual(1, len(errors))
         self.assertIn("files references non-existing file", errors[0])
-
 

@@ -8,8 +8,10 @@ class CourseValidationTests(unittest.TestCase):
 
     def validator(self, directory):
         from access_cli_sealuzh.main import AccessValidator
-        args = SimpleNamespace(directory=str(directory),
-                               type="course", recursive=False)
+        args = SimpleNamespace(directory=str(directory), execute=False,
+                               run=None, test=None, verbose=False,
+                               grade_template=False, grade_solution=False,
+                               level="course", recursive=False)
         return AccessValidator(args)
 
     def test_valid_config(self):

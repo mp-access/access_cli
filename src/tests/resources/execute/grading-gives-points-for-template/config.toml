@@ -2,9 +2,9 @@ slug = "variable-assignment"
 authors = ["Jane Doe <jane@uzh.ch>"]
 license = "CC BY 4.0"
 
-max_attempts = 3
-refill = 30
-max_points = 2
+max_attempts = 3 # integer
+refill = 30 # integer
+max_points = 2 # double
 
 [information.en]
 title = "Variable assignment"
@@ -13,21 +13,22 @@ instructions_file = "instructions_en.md"
 [evaluator]
 docker_image = "python:latest"
 run_command = "python script.py"
-grade_command = "python -m unittest grading.py"
+test_command = "python -m unittest tests.py -v"
+grade_command = "python -m unittest grading.py -v"
 
 [files]
 visible = [
-  "script.py"
+  "script.py",
+  "tests.py",
 ]
-# Invalid: solution should not be editable
 editable = [
   "script.py",
-  "solution.py"
+  "tests.py",
 ]
 grading = [
-  "grading.py"
+  "grading.py",
 ]
 solution = [
-  "solution.py"
+  "solution.py",
 ]
 

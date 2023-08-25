@@ -8,8 +8,10 @@ class TaskValidationTests(unittest.TestCase):
 
     def validator(self, directory):
         from access_cli_sealuzh.main import AccessValidator
-        args = SimpleNamespace(directory=str(directory),
-                               type="task", recursive=False)
+        args = SimpleNamespace(directory=str(directory), execute=False,
+                               run=None, test=None, verbose=False,
+                               grade_template=False, grade_solution=False,
+                               level="task", recursive=False)
         return AccessValidator(args)
 
     def test_valid_config(self):
@@ -25,7 +27,6 @@ class TaskValidationTests(unittest.TestCase):
     def test_grading_should_not_be_editable(self):
         validator = self.validator(files('tests.resources.task').joinpath('grading-should-not-be-editable'))
         valid, errors = validator.run()
-        print(errors)
         self.assertEqual(1, len(errors))
 
     def test_grading_should_not_be_visible(self):
