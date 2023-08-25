@@ -26,14 +26,17 @@ class AccessValidator:
 
     def read_directory_config(self, directory):
         if not os.path.isdir(directory):
-            self.logger.error(f"--directory argument {directory} is not a directory")
+            self.logger.error(f"config directory {directory} is not a directory")
         path = os.path.join(directory, "config.toml")
         if not os.path.isfile(path):
             self.logger.error(f"{path} does not exist or is not a file")
+            raise FileNotFoundError
         return path, self.read_config(path)
 
     def validate_course(self, course):
-        path, config = self.read_directory_config(course)
+        self.print(f" > Validating course {course}")
+        try: path, config = self.read_directory_config(course)
+        except FileNotFoundError: return
         # schema validation
         if not self.v.validate(config, course_schema):
             self.logger.error(f"{path} schema errors:\n\t{self.pp.pformat(self.v.errors)}")
@@ -72,7 +75,9 @@ class AccessValidator:
                 self.validate_assignment(os.path.join(course, assignment))
 
     def validate_assignment(self, assignment):
-        path, config = self.read_directory_config(assignment)
+        self.print(f" > Validating assignment {assignment}")
+        try: path, config = self.read_directory_config(assignment)
+        except FileNotFoundError: return
         # schema validation
         if not self.v.validate(config, assignment_schema):
             self.logger.error(f"{path} schema errors:\n\t{self.pp.pformat(self.v.errors)}")
@@ -99,7 +104,9 @@ class AccessValidator:
                 self.validate_task(os.path.join(assignment, task))
 
     def validate_task(self, task):
-        path, config = self.read_directory_config(task)
+        self.print(f" > Validating task {task}")
+        try: path, config = self.read_directory_config(task)
+        except FileNotFoundError: return
         # schema validation
         if not self.v.validate(config, task_schema):
             self.logger.error(f"{path} schema errors:\n\t{self.pp.pformat(self.v.errors)}")
@@ -133,7 +140,7 @@ class AccessValidator:
         evaluator = config["evaluator"]
         if type(self.args.run) == int:
             self.execute_command(task, evaluator, "run_command", self.args.run)
-        if type(self.args.test) == int:
+        if type(self.args.test) == int and "test_command" in evaluator:
             self.execute_command(task, evaluator, "test_command", self.args.test)
         if self.args.grade_template:
             self.execute_grade_command(task, evaluator, 0)
@@ -142,7 +149,9 @@ class AccessValidator:
 
     def execute_grade_command(self, task, evaluator, expected_points, solve_command=None):
         grade_results = self.execute_command(task, evaluator, "grade_command", solve_command=solve_command)
-        if grade_results["points"] != expected_points:
+        if grade_results == None:
+            self.logger.error(f"{task} grading did not produce grade_results.json")
+        elif grade_results["points"] != expected_points:
             self.logger.error(f"{task} {grade_results['points']} points awarded instead of expected {expected_points}")
 
     def execute_command(self, task, evaluator, command_type, expected_returncode=None, solve_command=None):
@@ -159,7 +168,7 @@ class AccessValidator:
 
             header.append(f"Executing {command_type} in {docker_image}.")
             header_len = max(len(h) for h in header)
-            self.print( "\n╭──" + "─" * header_len  +"──╮")
+            self.print( "╭──" + "─" * header_len  +"──╮")
             for line in header:
                 self.print(f"│  {line:<{header_len}}  │")
             self.print( "├──" + "─" * header_len + "──╯")
@@ -192,8 +201,9 @@ class AccessValidator:
                 if expected_returncode != None:
                     if expected_returncode != result.returncode:
                         self.logger.error(f"{task} {command} ({command_type}): Expected returncode {expected_returncode} but got {result.returncode}")
-                with open(os.path.join(workspace, "grade_results.json")) as grade_result:
-                    return json.load(grade_result)
+                if os.path.isfile("grade_results.json"):
+                    with open(os.path.join(workspace, "grade_results.json")) as grade_result:
+                        return json.load(grade_result)
             except subprocess.TimeoutExpired:
                 with open(cid_file) as cidf:
                     cid = cidf.read()
