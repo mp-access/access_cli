@@ -22,6 +22,8 @@ def main():
         help = "execute the grade command and expect max-points to be awarded.")
     parser.add_argument('-s', '--solve-command', type=str,
         help = "shell command which solves the exercise")
+    parser.add_argument('-f', '--global-file', type=list, action='append',
+        help = "files and/or directories that are needed for grading")
     parser.add_argument('-v', '--verbose', action='store_true', default=False,
         help = "show output when running executions")
     parser.add_argument('-R', '--recursive', action='store_true', default=False,

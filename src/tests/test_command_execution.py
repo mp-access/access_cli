@@ -6,20 +6,27 @@ from importlib.resources import files
 
 class CommandExecutionTests(unittest.TestCase):
 
-    def validator(self, directory, commands):
+    def validator(self, directory, commands, global_file=[]):
         from access_cli_sealuzh.main import AccessValidator
         args = SimpleNamespace(directory=str(directory), execute=True, verbose=False,
+                               global_file=global_file,
                                run=0 if "run" in commands else None,
                                test=0 if "test" in commands else None,
                                grade_template=True if "template" in commands else False,
                                grade_solution=True if "solution" in commands else False,
                                solve_command = "cp solution.py script.py",
-                               level="task", recursive=False)
+                               level="task", recursive=False,)
         return AccessValidator(args)
 
     def test_valid_config(self):
         validator = self.validator(files('tests.resources.execute').joinpath('valid'),
           ["run", "test", "template", "solution"])
+        valid, errors = validator.run()
+        self.assertEqual(0, len(errors))
+
+    def test_global_file(self):
+        validator = self.validator(files('tests.resources.execute').joinpath('global-file'),
+          ["template"], global_file=["../../global/"])
         valid, errors = validator.run()
         self.assertEqual(0, len(errors))
 

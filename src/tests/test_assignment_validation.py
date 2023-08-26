@@ -9,6 +9,7 @@ class AssignmentValidationTests(unittest.TestCase):
     def validator(self, directory):
         from access_cli_sealuzh.main import AccessValidator
         args = SimpleNamespace(directory=str(directory), execute=False,
+                               global_file=[],
                                run=None, test=None, verbose=False,
                                grade_template=False, grade_solution=False,
                                level="assignment", recursive=False)

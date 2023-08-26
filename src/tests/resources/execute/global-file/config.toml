@@ -1,0 +1,34 @@
+slug = "variable-assignment"
+authors = ["Jane Doe <jane@uzh.ch>"]
+license = "CC BY 4.0"
+
+max_attempts = 3 # integer
+refill = 30 # integer
+max_points = 2 # double
+
+[information.en]
+title = "Variable assignment"
+instructions_file = "instructions_en.md"
+
+[evaluator]
+docker_image = "python:latest"
+run_command = "python script.py"
+test_command = "python -m unittest tests.py -v"
+grade_command = "python -m unittest grading.py -v"
+
+[files]
+visible = [
+  "script.py",
+  "tests.py",
+]
+editable = [
+  "script.py",
+  "tests.py",
+]
+grading = [
+  "grading.py",
+]
+solution = [
+  "solution.py",
+]
+

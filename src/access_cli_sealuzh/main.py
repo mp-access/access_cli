@@ -160,6 +160,8 @@ class AccessValidator:
         # Copy task to a temporary directory for execution
         with tempfile.TemporaryDirectory() as workspace:
             copy_tree(task, workspace)
+            for file in self.args.global_file:
+                copy_tree(os.path.join(task, file), workspace)
 
             header = []
 
@@ -168,10 +170,10 @@ class AccessValidator:
 
             header.append(f"Executing {command_type} in {docker_image}.")
             header_len = max(len(h) for h in header)
-            self.print( "╭──" + "─" * header_len  +"──╮")
+            self.print(     "╭──"+ "─"*header_len +"──╮")
             for line in header:
                 self.print(f"│  {line:<{header_len}}  │")
-            self.print( "├──" + "─" * header_len + "──╯")
+            self.print(     "├──"+ "─"*header_len +"──╯")
 
             if solve_command:
                 subprocess.run(solve_command, timeout=3, cwd=workspace, shell=True)
@@ -201,7 +203,7 @@ class AccessValidator:
                 if expected_returncode != None:
                     if expected_returncode != result.returncode:
                         self.logger.error(f"{task} {command} ({command_type}): Expected returncode {expected_returncode} but got {result.returncode}")
-                if os.path.isfile("grade_results.json"):
+                if os.path.isfile(os.path.join(workspace, "grade_results.json")):
                     with open(os.path.join(workspace, "grade_results.json")) as grade_result:
                         return json.load(grade_result)
             except subprocess.TimeoutExpired:
