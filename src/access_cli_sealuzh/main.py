@@ -152,7 +152,8 @@ class AccessValidator:
         if grade_results == None:
             self.logger.error(f"{task} grading did not produce grade_results.json")
         elif grade_results["points"] != expected_points:
-            self.logger.error(f"{task} {grade_results['points']} points awarded instead of expected {expected_points}")
+            for_version = "template" if expected_points == 0 else "solution"
+            self.logger.error(f"{task} {for_version}: {grade_results['points']} points awarded instead of expected {expected_points}")
 
     def execute_command(self, task, evaluator, command_type, expected_returncode=None, solve_command=None):
         docker_image = evaluator["docker_image"]
@@ -167,8 +168,10 @@ class AccessValidator:
 
             if solve_command:
                 header.append(f"Solving task by running {solve_command}.")
-
             header.append(f"Executing {command_type} in {docker_image}.")
+            if expected_returncode != None:
+                header.append(f"Expecting return code {expected_returncode}")
+
             header_len = max(len(h) for h in header)
             self.print(     "╭──"+ "─"*header_len +"──╮")
             for line in header:

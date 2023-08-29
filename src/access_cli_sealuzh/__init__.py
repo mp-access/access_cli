@@ -22,7 +22,7 @@ def main():
         help = "execute the grade command and expect max-points to be awarded.")
     parser.add_argument('-s', '--solve-command', type=str,
         help = "shell command which solves the exercise")
-    parser.add_argument('-f', '--global-file', type=list, action='append',
+    parser.add_argument('-f', '--global-file', action='append',
         help = "files and/or directories that are needed for grading")
     parser.add_argument('-v', '--verbose', action='store_true', default=False,
         help = "show output when running executions")
@@ -38,9 +38,11 @@ def main():
     valid, errors = AccessValidator(args).run()
 
     if len(errors) > 0:
-        print("!! Validation failed:")
+        print(" ✗ Validation failed!")
         for error in errors:
             print(error)
         sys.exit(1)
+    else:
+        print(" ✓ Validation successful")
     sys.exit(0)
 
