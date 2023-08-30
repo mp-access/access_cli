@@ -6,7 +6,7 @@ import pprint
 import tempfile
 import subprocess
 import json
-from distutils.dir_util import copy_tree
+import shutil
 from access_cli_sealuzh.logger import Logger
 from cerberus import Validator
 from access_cli_sealuzh.schema import *
@@ -147,35 +147,51 @@ class AccessValidator:
             if file not in config["files"]["visible"]:
                 self.logger.error(f"{path} invisible file {file} marked as editable")
         # - OPTIONALLY: that the run, test and grade commands execute correctly
-        evaluator = config["evaluator"]
         if type(self.args.run) == int:
-            self.execute_command(task, evaluator, "run_command", self.args.run)
-        if type(self.args.test) == int and "test_command" in evaluator:
-            self.execute_command(task, evaluator, "test_command", self.args.test)
+            self.execute_command(task, config, "run_command", self.args.run)
+        if type(self.args.test) == int and "test_command" in config["evaluator"]:
+            self.execute_command(task, config, "test_command", self.args.test)
         if self.args.grade_template:
-            self.execute_grade_command(task, evaluator, 0)
+            self.execute_grade_command(task, config, 0)
         if self.args.grade_solution:
-            self.execute_grade_command(task, evaluator, config["max_points"], self.args.solve_command)
+            self.execute_grade_command(task, config, config["max_points"], self.args.solve_command)
         if error_count == self.logger.error_count():
             self.logger.success(f"{path}")
 
-    def execute_grade_command(self, task, evaluator, expected_points, solve_command=None):
-        grade_results = self.execute_command(task, evaluator, "grade_command", solve_command=solve_command)
+    def execute_grade_command(self, task, config, expected_points, solve_command=None):
+        grade_results = self.execute_command(task, config, "grade_command", solve_command=solve_command)
         if grade_results == None:
             self.logger.error(f"{task} grading did not produce grade_results.json")
         elif grade_results["points"] != expected_points:
             for_version = "template" if expected_points == 0 else "solution"
             self.logger.error(f"{task} {for_version}: {grade_results['points']} points awarded instead of expected {expected_points}")
 
-    def execute_command(self, task, evaluator, command_type, expected_returncode=None, solve_command=None):
-        docker_image = evaluator["docker_image"]
-        command = evaluator[command_type]
-        # Copy task to a temporary directory for execution
-        with tempfile.TemporaryDirectory() as workspace:
-            copy_tree(task, workspace)
-            for file in self.args.global_file:
-                copy_tree(os.path.join(task, file), workspace)
+    def copy_file(self, root_path, file_path, workspace):
+        abs_root = os.path.abspath(root_path)
+        abs_file = os.path.join(abs_root, file_path)
+        os.makedirs(os.path.join(workspace, os.path.dirname(file_path)), exist_ok=True)
+        shutil.copyfile(abs_file, os.path.join(workspace, file_path))
 
+    def execute_command(self, task, config, command_type, expected_returncode=None, solve_command=None):
+        docker_image = config["evaluator"]["docker_image"]
+        command = config["evaluator"][command_type]
+        with tempfile.TemporaryDirectory() as workspace:
+            # Copy task to a temporary directory for execution
+            for file in config["files"]["visible"]:
+                self.copy_file(task, file, workspace)
+            # If grading, also copy necessary files
+            if command_type == "grade_command":
+                for file in config["files"]["grading"]:
+                    self.copy_file(task, file, workspace)
+                    # Copy global files
+                    if self.args.global_file != []:
+                        for file in self.args.global_file:
+                            course_root = self.args.course_root
+                            self.copy_file(os.path.abspath(course_root), file, workspace)
+            # If grading solution, copy solution files, too
+            if solve_command != None:
+                for file in config["files"]["solution"]:
+                    self.copy_file(task, file, workspace)
             header = []
 
             if solve_command:

@@ -170,3 +170,15 @@ the template and the solution:
 ❰ Validation failed ❱
  ✗ ./ solution: 1 points awarded instead of expected 2
 ```
+
+Note that if your task depends on global course files (as specified in the
+courses `config.toml`), and you're validating a task, then you need to tell
+`access-cli` about the global files yourself via the `-f` parameter and also
+specify the course root where the global files reside via `-C`, e.g.:
+
+```
+access-cli -l task -d ./ -r0 -t0 -gGvs "cp solution.py script.py" -f "universal/harness.py" -C "../.."
+```
+
+will copy `../../universal/harness.py` into the docker container before grading.
+

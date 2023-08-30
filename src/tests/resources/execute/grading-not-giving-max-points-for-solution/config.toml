@@ -27,6 +27,7 @@ editable = [
 ]
 grading = [
   "grading.py",
+  "harness.py"
 ]
 solution = [
   "solution.py",

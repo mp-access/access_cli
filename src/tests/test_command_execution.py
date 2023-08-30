@@ -6,10 +6,12 @@ from importlib.resources import files
 
 class CommandExecutionTests(unittest.TestCase):
 
-    def validator(self, directory, commands, global_file=[]):
+    def validator(self, directory, commands, global_file=[], course_root=None):
         from access_cli_sealuzh.main import AccessValidator
+        print(directory)
+        print(str(directory))
         args = SimpleNamespace(directory=str(directory), execute=True, verbose=False,
-                               global_file=global_file,
+                               global_file=global_file, course_root=course_root,
                                run=0 if "run" in commands else None,
                                test=0 if "test" in commands else None,
                                grade_template=True if "template" in commands else False,
@@ -25,8 +27,9 @@ class CommandExecutionTests(unittest.TestCase):
         self.assertEqual(0, len(errors))
 
     def test_global_file(self):
-        validator = self.validator(files('tests.resources.execute').joinpath('global-file'),
-          ["template"], global_file=["../../global/"])
+        validator = self.validator(files('tests.resources.execute.global-file.as').joinpath('task'),
+          ["template"], global_file=["universal/harness.py"],
+          course_root=str(files('tests.resources.execute').joinpath('global-file')))
         valid, errors = validator.run()
         self.assertEqual(0, len(errors))
 

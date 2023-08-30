@@ -1,34 +1,18 @@
-slug = "variable-assignment"
-authors = ["Jane Doe <jane@uzh.ch>"]
-license = "CC BY 4.0"
+slug = "access-mock-course"
 
-max_attempts = 3 # integer
-refill = 30 # integer
-max_points = 2 # double
+"assignments" = [ ]
+
+[visibility]
+default = "hidden"
 
 [information.en]
-title = "Variable assignment"
-instructions_file = "instructions_en.md"
+title = "ACCESS Mock Course"
+description = "This course demonstrates how to define ACCESS courses, assignments and tasks."
+university = "University of Zurich"
+period = "Spring Semester 2023"
 
-[evaluator]
-docker_image = "python:latest"
-run_command = "python script.py"
-test_command = "python -m unittest tests.py -v"
-grade_command = "python -m unittest grading.py -v"
-
-[files]
-visible = [
-  "script.py",
-  "tests.py",
-]
-editable = [
-  "script.py",
-  "tests.py",
-]
+[global_files]
 grading = [
-  "grading.py",
-]
-solution = [
-  "solution.py",
+  "universal/harness.py",
 ]
 

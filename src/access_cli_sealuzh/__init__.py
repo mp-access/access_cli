@@ -23,7 +23,9 @@ def main():
     parser.add_argument('-s', '--solve-command', type=str,
         help = "shell command which solves the exercise")
     parser.add_argument('-f', '--global-file', action='append', default=[],
-        help = "files and/or directories that are needed for grading")
+        help = "global files (relative to course root)")
+    parser.add_argument('-C', '--course-root',
+        help = "path to course root, needed when specifying -f")
     parser.add_argument('-v', '--verbose', action='store_true', default=False,
         help = "show output when running executions")
     parser.add_argument('-R', '--recursive', action='store_true', default=False,
@@ -43,6 +45,10 @@ def main():
         if not args.solve_command:
             print("If --grade-solution is passed, --solve-command must be provided")
             sys.exit(11)
+    if args.global_file != []:
+        if not args.course_root:
+            print("If --global-file is passed, --course-root must be provided")
+            sys.exit(12)
 
     successes, errors = AccessValidator(args).run()
 
