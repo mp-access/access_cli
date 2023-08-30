@@ -2,15 +2,18 @@ class Logger():
 
     def __init__(self, stdout=False):
         self.stdout = stdout
-        self.valid = []
+        self.successes = []
         self.errors = []
+
+    def error_count(self):
+        return len(self.errors)
 
     def print(self, levelname, message):
         if self.stdout: print(f"\n>>{levelname}: {message}")
 
-    def valid(self, message):
-        self.valid.append(message)
-        self.print("valid", message)
+    def success(self, message):
+        self.successes.append(message)
+        self.print("success", message)
 
     def error(self, message):
         self.errors.append(message)

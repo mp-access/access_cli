@@ -22,27 +22,38 @@ def main():
         help = "execute the grade command and expect max-points to be awarded.")
     parser.add_argument('-s', '--solve-command', type=str,
         help = "shell command which solves the exercise")
-    parser.add_argument('-f', '--global-file', action='append',
+    parser.add_argument('-f', '--global-file', action='append', default=[],
         help = "files and/or directories that are needed for grading")
     parser.add_argument('-v', '--verbose', action='store_true', default=False,
         help = "show output when running executions")
     parser.add_argument('-R', '--recursive', action='store_true', default=False,
         help = "recurse into nested structures (assignments/tasks) if applicable")
+    parser.add_argument('-A', '--all', action='store_true', default=False,
+        help = "equivalent to -r0 -t0 -gGR")
     args = parser.parse_args()
+
+    if args.all:
+        args.run = 0
+        args.test = 0
+        args.grade_template = True
+        args.grade_solution = True
+        args.recursive = True
 
     if args.grade_solution:
         if not args.solve_command:
             print("If --grade-solution is passed, --solve-command must be provided")
             sys.exit(11)
 
-    valid, errors = AccessValidator(args).run()
+    successes, errors = AccessValidator(args).run()
 
     if len(errors) > 0:
-        print(" ✗ Validation failed!")
+        print("❰ Validation failed ❱")
         for error in errors:
-            print(error)
+            print(f" ✗ {error}")
         sys.exit(1)
     else:
-        print(" ✓ Validation successful")
+        print("❰ Validation successful ❱")
+        for success in successes:
+            print(f" ✓ {success}")
     sys.exit(0)
 

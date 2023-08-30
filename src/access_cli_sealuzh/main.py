@@ -34,7 +34,8 @@ class AccessValidator:
         return path, self.read_config(path)
 
     def validate_course(self, course):
-        self.print(f" > Validating course {course}")
+        self.print(f" > Validating course {course}", True)
+        error_count = self.logger.error_count()
         try: path, config = self.read_directory_config(course)
         except FileNotFoundError: return
         # schema validation
@@ -70,12 +71,15 @@ class AccessValidator:
                 for file in files:
                     if not os.path.isfile(os.path.join(course, file)):
                         self.logger.error(f"{path} global files references non-existing file: {file}")
+        if error_count == self.logger.error_count():
+            self.logger.success(f"{path}")
         if self.args.recursive:
             for assignment in config["assignments"]:
                 self.validate_assignment(os.path.join(course, assignment))
 
     def validate_assignment(self, assignment):
-        self.print(f" > Validating assignment {assignment}")
+        self.print(f" > Validating assignment {assignment}", True)
+        error_count = self.logger.error_count()
         try: path, config = self.read_directory_config(assignment)
         except FileNotFoundError: return
         # schema validation
@@ -99,12 +103,15 @@ class AccessValidator:
             for name, info in config["information"].items():
                 if not self.v.validate(info, assignment_information_schema):
                     self.logger.error(f"{path}.{name} information schema errors: {self.pp.pformat(self.v.errors)}")
+        if error_count == self.logger.error_count():
+            self.logger.success(f"{path}")
         if self.args.recursive:
             for task in config["tasks"]:
                 self.validate_task(os.path.join(assignment, task))
 
     def validate_task(self, task):
-        self.print(f" > Validating task {task}")
+        self.print(f" > Validating task {task}", True)
+        error_count = self.logger.error_count()
         try: path, config = self.read_directory_config(task)
         except FileNotFoundError: return
         # schema validation
@@ -124,18 +131,21 @@ class AccessValidator:
             for file in files:
                 if not os.path.isfile(os.path.join(task, file)):
                     self.logger.error(f"{path} files references non-existing file: {file}")
-        # - that none of the invisible, grading or solution files are editable
-        non_editable_files = config["files"]["grading"] + config["files"]["solution"]
-        for file in non_editable_files:
+        # - that none of the grading or solution files are editable or visible
+        for file in config["files"]["grading"]:
             if file in config["files"]["editable"]:
-                self.logger.error(f"{path} {file} marked as editable")
+                self.logger.error(f"{path} grading file {file} marked as editable")
+            if file in config["files"]["visible"]:
+                self.logger.error(f"{path} grading file {file} marked as visible")
+        for file in config["files"]["solution"]:
+            if file in config["files"]["editable"]:
+                self.logger.error(f"{path} solution file {file} marked as editable")
+            if file in config["files"]["visible"]:
+                self.logger.error(f"{path} solution file {file} marked as visible")
+        # - that editable files are also visible
         if file in config["files"]["editable"]:
             if file not in config["files"]["visible"]:
                 self.logger.error(f"{path} invisible file {file} marked as editable")
-        # - that none of the grading or solution files are visible
-        if file in config["files"]["grading"] +  config["files"]["solution"]:
-            if file in config["files"]["visible"]:
-                self.logger.error(f"{path} grading or solution file {file} marked as visible")
         # - OPTIONALLY: that the run, test and grade commands execute correctly
         evaluator = config["evaluator"]
         if type(self.args.run) == int:
@@ -146,6 +156,8 @@ class AccessValidator:
             self.execute_grade_command(task, evaluator, 0)
         if self.args.grade_solution:
             self.execute_grade_command(task, evaluator, config["max_points"], self.args.solve_command)
+        if error_count == self.logger.error_count():
+            self.logger.success(f"{path}")
 
     def execute_grade_command(self, task, evaluator, expected_points, solve_command=None):
         grade_results = self.execute_command(task, evaluator, "grade_command", solve_command=solve_command)
@@ -224,8 +236,8 @@ class AccessValidator:
         self.print(f"├─────╼ stderr:")
         for line in stderr.splitlines(): self.print(f"│{line}")
 
-    def print(self, string):
-        if self.args.verbose:
+    def print(self, string, verbose=False):
+        if self.args.verbose or verbose:
             print(string)
 
     def run(self):
@@ -233,5 +245,5 @@ class AccessValidator:
             case "course": self.validate_course(self.args.directory)
             case "assignment": self.validate_assignment(self.args.directory)
             case "task": self.validate_task(self.args.directory)
-        return self.logger.valid, self.logger.errors
+        return self.logger.successes, self.logger.errors
 

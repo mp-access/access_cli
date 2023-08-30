@@ -71,8 +71,8 @@ task_information_schema = {
 # - if at least "en" information is given (restriction to be lifted later)
 # - if information conforms to assignment_information_schema
 # - if each file in files actually exists
-# - that none of the invisible, grading or solution files are editable
-# - that none of the grading or solution files are visible
+# - that none of the grading or solution files are editable or visible
+# - that editable files are also visible
 # - OPTIONALLY: that the run, test and grade commands execute correctly
 task_schema = {
     "slug":         {'required': True, 'type': 'string'},
