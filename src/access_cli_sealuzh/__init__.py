@@ -2,15 +2,15 @@ import argparse
 import sys
 
 def main():
-    from access_cli_sealuzh.main import AccessValidator
+    from access_cli_sealuzh.main import AccessValidator, autodetect
 
     parser = argparse.ArgumentParser(
         prog = 'access-cli',
         description = 'Validate ACCESS course configurations using the CLI')
-    parser.add_argument('-l', '--level', type=str, required=True,
+    parser.add_argument('-l', '--level', type=str,
         choices=['course', 'assignment', 'task'],
         help = "which type of config should be validated")
-    parser.add_argument('-d', '--directory', required=True,
+    parser.add_argument('-d', '--directory', default=".",
         help = "path to directory containing the config")
     parser.add_argument('-r', '--run', type=int,
         help = "execute the run command and expect provided return code.")
@@ -30,25 +30,26 @@ def main():
         help = "show output when running executions")
     parser.add_argument('-R', '--recursive', action='store_true', default=False,
         help = "recurse into nested structures (assignments/tasks) if applicable")
-    parser.add_argument('-A', '--all', action='store_true', default=False,
-        help = "equivalent to -r0 -t0 -gGR")
+    parser.add_argument('-A', '--auto-detect', action='store_true', default=False,
+        help = "attempt to auto-detect what is being validated")
     args = parser.parse_args()
-
-    if args.all:
-        args.run = 0
-        args.test = 0
-        args.grade_template = True
-        args.grade_solution = True
-        args.recursive = True
 
     if args.grade_solution:
         if not args.solve_command:
             print("If --grade-solution is passed, --solve-command must be provided")
             sys.exit(11)
+
     if args.global_file != []:
         if not args.course_root:
             print("If --global-file is passed, --course-root must be provided")
             sys.exit(12)
+
+    if not args.auto_detect:
+        if not args.level:
+            print("Unless --auto-detect is set, must specify level")
+            sys.exit(10)
+    else:
+        args = autodetect(args)
 
     successes, errors = AccessValidator(args).run()
 

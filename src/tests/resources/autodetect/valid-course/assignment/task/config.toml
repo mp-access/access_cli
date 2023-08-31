@@ -1,0 +1,48 @@
+# Mandatory. This slug will be used for the URL of the task.
+slug = "variable-assignment"
+authors = ["Jane Doe <jane@uzh.ch>"]
+license = "CC BY 4.0"
+
+# Maximum number of attempts a user can have to submit a solution
+max_attempts = 3 # integer
+# Optional. After this number of seconds, the number of available attempts will increase by 1 (not exceeding the maximum)
+refill = 30 # integer
+# Number of points awarded for a perfect solution
+max_points = 2 # double
+
+# Mandatory for the default language specified in the course config.toml
+[information.en]
+title = "Variable assignment"
+instructions_file = "instructions_en.md"
+
+# For each additional language, one may specify an additional instruction markdown file.
+[information.de]
+title = "Variabelzuweisung"
+instructions_file = "instructions_de.md"
+
+[evaluator]
+# Image will be pulled from docker hub if not yet present
+docker_image = "python:latest"
+# Command used to run code
+run_command = "python task/script.py"
+# Command used to run tests
+test_command = "python -m unittest discover -v task"
+# Command used to grade submissions
+grade_command = "python -m unittest discover -v grading"
+
+[files]
+visible = [
+  "task/script.py",
+  "task/tests.py",
+]
+editable = [
+  "task/script.py",
+  "task/tests.py",
+]
+grading = [
+  "grading/tests.py",
+]
+solution = [
+  "solution/script.py",
+]
+

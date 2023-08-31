@@ -4,7 +4,7 @@ A tool for verifying ACCESS course configurations locally.
 
 ## Installation
 
-## Examples
+## Usage
 
 `access-cli` verifies courses, assignments and tasks for deployment on ACCESS.
 It checks whether any given `config.toml` conforms to the required schema and
@@ -22,11 +22,38 @@ designing tasks. In particular it can:
 
 All executions are done in docker containers.
 
+In its simplest form, `access-cli -A` will, by default, validate configuration
+files and execute the run and test commands expecting a 0 return code. It will
+also execute the grading command on the template and expect zero points. It will
+attempt to read the parent course/assignment config to determine global files if
+possible. This will only work if you use a flat course/assignment/task directory
+structure.
+
+```
+% access-cli -A
+ > Validating task .
+❰ Validation successful ❱
+ ✓ ./config.toml
+```
+
+However, it cannot auto-detect what is necessary to solve a task to also check
+whether full points are awarded for a correction solution. In that case, you
+need to provide the solve-command:
+
+```
+% access-cli -AGs "rm -R task; cp -R solution task"
+ > Validating task .
+❰ Validation successful ❱
+ ✓ ./config.toml
+```
+
+Add the `-v` flag for verbose output.
+
 ### Configuration file validation
 
-By default, `access-cli` only verifies configuration files. Here's an example
-where `access-cli` is run in a course directory where the override dates are
-invalid:
+Unless using auto-detection, `access-cli` only verifies configuration files
+by default. Here's an example where `access-cli` is run in a course directory
+where the override dates are invalid:
 
 ```
 % access-cli -l course -d ./

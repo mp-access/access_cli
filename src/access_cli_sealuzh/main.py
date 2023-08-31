@@ -7,10 +7,51 @@ import tempfile
 import subprocess
 import json
 import shutil
+from pathlib import Path
 from access_cli_sealuzh.logger import Logger
 from cerberus import Validator
 from access_cli_sealuzh.schema import *
 
+def autodetect(args):
+    # if a directory has been specified, assume that's what we're validating
+    config = AccessValidator.read_config(
+        os.path.join(args.directory, "config.toml"))
+    # detect course config
+    level = None
+    if "visibility" in config:
+        level = "course"
+    elif "tasks" in config:
+        level = "assignment"
+    elif "evaluator" in config:
+        level = "task"
+    args.level = level
+
+    # set autodetect defaults
+    args.recursive = True
+    args.grade_template = True
+    args.run = 0
+    args.test = 0
+
+    # detect global files if not set manually
+    if args.course_root == None:
+        if level == "course":
+            course_config = config
+            course_root = args.directory
+        else:
+            if level == "assignment":
+                course_root = Path(args.directory).absolute().parent
+            elif level == "task":
+                course_root = Path(args.directory).absolute().parent.parent
+            course_config_path = os.path.join(course_root, "config.toml")
+            if os.path.exists(course_config_path):
+                course_config = AccessValidator.read_config(course_config_path)
+
+        args.global_file = course_config["global_files"]["grading"]
+        args.course_root = course_root
+
+    print("Using the following auto-detected arguments:")
+    print(str(args)[len("Namespace("):-1])
+    return args
 
 class AccessValidator:
 
@@ -20,7 +61,8 @@ class AccessValidator:
         self.v = Validator()
         self.pp = pprint.PrettyPrinter(indent=2)
 
-    def read_config(self, path):
+    @staticmethod
+    def read_config(path):
         with open(path, "rb") as f:
             return tomli.load(f)
 
@@ -41,6 +83,7 @@ class AccessValidator:
         # schema validation
         if not self.v.validate(config, course_schema):
             self.logger.error(f"{path} schema errors:\n\t{self.pp.pformat(self.v.errors)}")
+            return
         # MANUALLY CHECK:
         # - if referenced icon exists
         if "logo" in config:
@@ -85,6 +128,7 @@ class AccessValidator:
         # schema validation
         if not self.v.validate(config, assignment_schema):
             self.logger.error(f"{path} schema errors:\n\t{self.pp.pformat(self.v.errors)}")
+            return
         # MANUALLY CHECK:
         # - if referenced task exist and contain config.toml
         for name in config["tasks"]:
@@ -117,6 +161,7 @@ class AccessValidator:
         # schema validation
         if not self.v.validate(config, task_schema):
             self.logger.error(f"{path} schema errors:\n\t{self.pp.pformat(self.v.errors)}")
+            return
         # MANUALLY CHECK:
         # - if at least "en" information is given (restriction to be lifted later)
         if "information" not in config or "en" not in config["information"]:
@@ -166,9 +211,12 @@ class AccessValidator:
             for_version = "template" if expected_points == 0 else "solution"
             self.logger.error(f"{task} {for_version}: {grade_results['points']} points awarded instead of expected {expected_points}")
 
-    def copy_file(self, root_path, file_path, workspace):
-        abs_root = os.path.abspath(root_path)
+    def copy_file(self, task, file_path, workspace):
+        abs_root = os.path.abspath(task)
         abs_file = os.path.join(abs_root, file_path)
+        if not os.path.exists(abs_file):
+            self.logger.error(f"{task} referenced file {file_path} does not exist")
+            return
         os.makedirs(os.path.join(workspace, os.path.dirname(file_path)), exist_ok=True)
         shutil.copyfile(abs_file, os.path.join(workspace, file_path))
 
