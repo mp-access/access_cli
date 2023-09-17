@@ -76,9 +76,9 @@ task_information_schema = {
 # - OPTIONALLY: that the run, test and grade commands execute correctly
 task_schema = {
     "slug":         {'required': True, 'type': 'string'},
-    "authors":      {'required': True, 'type': 'list',
+    "authors":      {'required': False, 'type': 'list',
                      'schema': {'type': 'string'}},
-    "license":      {'required': True, 'type': 'string'},
+    "license":      {'required': False, 'type': 'string'},
     "max_attempts": {'required': True, 'type': 'integer'},
     "refill":       {'required': False, 'type': 'integer'},
     "max_points":   {'required': False, 'type': 'float'},
