@@ -61,6 +61,9 @@ assignment_schema = {
     "information":  {'required': True, 'type': 'dict'},
 }
 
+# Task information, which may come in any number of languages
+# MANUALLY CHECK:
+# - if referenced instructions_file exists
 task_information_schema = {
     "title":             {'required': True, 'type': 'string'},
     "instructions_file": {'required': True, 'type': 'string'}

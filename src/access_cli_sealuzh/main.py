@@ -170,7 +170,11 @@ class AccessValidator:
         else:
             for name, info in config["information"].items():
                 if not self.v.validate(info, task_information_schema):
-                    self.logger.error(f"{path}.{name} information schema errors: {self.pp.pformat(self.v.errors)}")
+                    self.logger.error(f"{path} {name} information schema errors: {self.pp.pformat(self.v.errors)}")
+                # - if referenced instructions_file exists
+                instructions_file = info["instructions_file"]
+                if not os.path.isfile(os.path.join(task, instructions_file)):
+                    self.logger.error(f"{path} {name} references non-existing {instructions_file}")
         # - if each file in files actually exists
         for context, files in config["files"].items():
             for file in files:
