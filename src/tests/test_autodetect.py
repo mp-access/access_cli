@@ -11,7 +11,8 @@ class RecursiveValidationTests(unittest.TestCase):
         args = SimpleNamespace(directory=str(directory), course_root=None,
                                solve_command="rm -R task; cp -R solution task",
                                grade_template = False, grade_solution=False,
-                               global_file=[], verbose=False, recursive=False)
+                               global_file=[], user="",
+                               verbose=False, recursive=False)
         args = autodetect(args)
         return AccessValidator(args)
 

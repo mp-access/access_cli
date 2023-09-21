@@ -12,7 +12,7 @@ class CommandExecutionTests(unittest.TestCase):
         print(str(directory))
         args = SimpleNamespace(directory=str(directory), execute=True, verbose=False,
                                global_file=global_file, course_root=course_root,
-                               run=0 if "run" in commands else None,
+                               run=0 if "run" in commands else None, user="",
                                test=0 if "test" in commands else None,
                                grade_template=True if "template" in commands else False,
                                grade_solution=True if "solution" in commands else False,

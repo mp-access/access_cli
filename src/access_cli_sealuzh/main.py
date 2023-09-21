@@ -265,6 +265,7 @@ class AccessValidator:
                 # Run the task command in docker
                 instruction = [
                    "docker", "run", "--rm",
+                   "--user", self.args.user,
                    "--cidfile", cid_file,
                    "--network", "none",
                    "-v", f"{workspace}:/workspace", "-w", "/workspace",

@@ -1,4 +1,5 @@
 import argparse
+import os
 import sys
 
 def main():
@@ -10,6 +11,8 @@ def main():
     parser.add_argument('-l', '--level', type=str,
         choices=['course', 'assignment', 'task'],
         help = "which type of config should be validated")
+    parser.add_argument('-u', '--user', default="autodetect",
+        help = "set docker user uid")
     parser.add_argument('-d', '--directory', default=".",
         help = "path to directory containing the config")
     parser.add_argument('-r', '--run', type=int,
@@ -34,6 +37,7 @@ def main():
         help = "attempt to auto-detect what is being validated")
     args = parser.parse_args()
 
+
     if args.grade_solution:
         if not args.solve_command:
             print("If --grade-solution is passed, --solve-command must be provided")
@@ -51,18 +55,23 @@ def main():
     else:
         args = autodetect(args)
 
-    logger = AccessValidator(args).run()
-    errors = logger.error_results()
+    if args.user == "autodetect":
+        args.user = os.getuid()
 
-    if errors:
-        for subject, messages in errors.items():
-            print(f"❰ Validation failed for {subject} ❱")
-            for m in messages:
-                print(f" ✗ {m}")
-        sys.exit(1)
+    logger = AccessValidator(args).run()
+
+    if not logger.error_results():
+        print(f"❰ Validation successful ❱")
+        for subject, messages in logger.results.items():
+            if not messages:
+                print(f" ✓ {subject}")
     else:
-        print("❰ Validation successful ❱")
-        for subject in logger.results:
-            print(f" ✓ {subject}")
+        print(f"❰ Validation failed ❱")
+        for subject, messages in logger.results.items():
+            if messages:
+                for m in messages:
+                    print(f" ✗ {m}")
+        sys.exit(1)
+
     sys.exit(0)
 
