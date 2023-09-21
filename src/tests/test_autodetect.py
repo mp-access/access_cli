@@ -17,17 +17,17 @@ class RecursiveValidationTests(unittest.TestCase):
 
     def test_course(self):
         validator = self.validator(files('tests.resources.autodetect').joinpath('valid-course'))
-        valid, errors = validator.run()
+        errors = validator.run().error_list()
         self.assertEqual(0, len(errors))
 
     def test_assignment(self):
         validator = self.validator(files('tests.resources.autodetect.valid-course').joinpath('assignment'))
-        valid, errors = validator.run()
+        errors = validator.run().error_list()
         self.assertEqual(0, len(errors))
 
     def test_task(self):
         validator = self.validator(files('tests.resources.autodetect.valid-course.assignment').joinpath('task'))
-        valid, errors = validator.run()
+        errors = validator.run().error_list()
         print(errors)
         self.assertEqual(0, len(errors))
 

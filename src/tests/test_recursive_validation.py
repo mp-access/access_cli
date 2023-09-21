@@ -17,12 +17,12 @@ class RecursiveValidationTests(unittest.TestCase):
 
     def test_valid_config(self):
         validator = self.validator(files('tests.resources.recursive').joinpath('valid'))
-        valid, errors = validator.run()
+        errors = validator.run().error_list()
         self.assertEqual(0, len(errors))
 
     def test_task_missing_file(self):
         validator = self.validator(files('tests.resources.recursive').joinpath('task-missing-file'))
-        valid, errors = validator.run()
+        errors = validator.run().error_list()
         self.assertEqual(1, len(errors))
         self.assertIn("files references non-existing file", errors[0])
 

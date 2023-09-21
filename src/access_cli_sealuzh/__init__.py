@@ -51,16 +51,18 @@ def main():
     else:
         args = autodetect(args)
 
-    successes, errors = AccessValidator(args).run()
+    logger = AccessValidator(args).run()
+    errors = logger.error_results()
 
-    if len(errors) > 0:
-        print("❰ Validation failed ❱")
-        for error in errors:
-            print(f" ✗ {error}")
+    if errors:
+        for subject, messages in errors.items():
+            print(f"❰ Validation failed for {subject} ❱")
+            for m in messages:
+                print(f" ✗ {m}")
         sys.exit(1)
     else:
         print("❰ Validation successful ❱")
-        for success in successes:
-            print(f" ✓ {success}")
+        for subject in logger.results:
+            print(f" ✓ {subject}")
     sys.exit(0)
 

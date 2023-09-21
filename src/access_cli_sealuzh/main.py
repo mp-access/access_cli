@@ -77,13 +77,14 @@ class AccessValidator:
 
     def validate_course(self, course):
         self.print(f" > Validating course {course}", True)
-        error_count = self.logger.error_count()
+        self.logger.set_subject(course)
         try: path, config = self.read_directory_config(course)
         except FileNotFoundError: return
         # schema validation
         if not self.v.validate(config, course_schema):
             self.logger.error(f"{path} schema errors:\n\t{self.pp.pformat(self.v.errors)}")
             return
+        self.logger.update_subject(f'{course} ({config["slug"]})')
         # MANUALLY CHECK:
         # - if referenced icon exists
         if "logo" in config:
@@ -114,21 +115,20 @@ class AccessValidator:
                 for file in files:
                     if not os.path.isfile(os.path.join(course, file)):
                         self.logger.error(f"{path} global files references non-existing file: {file}")
-        if error_count == self.logger.error_count():
-            self.logger.success(f"{path}")
         if self.args.recursive:
             for assignment in config["assignments"]:
                 self.validate_assignment(os.path.join(course, assignment))
 
     def validate_assignment(self, assignment):
         self.print(f" > Validating assignment {assignment}", True)
-        error_count = self.logger.error_count()
+        self.logger.set_subject(assignment)
         try: path, config = self.read_directory_config(assignment)
         except FileNotFoundError: return
         # schema validation
         if not self.v.validate(config, assignment_schema):
             self.logger.error(f"{path} schema errors:\n\t{self.pp.pformat(self.v.errors)}")
             return
+        self.logger.update_subject(f'{assignment} ({config["slug"]})')
         # MANUALLY CHECK:
         # - if referenced task exist and contain config.toml
         for name in config["tasks"]:
@@ -147,21 +147,20 @@ class AccessValidator:
             for name, info in config["information"].items():
                 if not self.v.validate(info, assignment_information_schema):
                     self.logger.error(f"{path}.{name} information schema errors: {self.pp.pformat(self.v.errors)}")
-        if error_count == self.logger.error_count():
-            self.logger.success(f"{path}")
         if self.args.recursive:
             for task in config["tasks"]:
                 self.validate_task(os.path.join(assignment, task))
 
     def validate_task(self, task):
         self.print(f" > Validating task {task}", True)
-        error_count = self.logger.error_count()
+        self.logger.set_subject(task)
         try: path, config = self.read_directory_config(task)
         except FileNotFoundError: return
         # schema validation
         if not self.v.validate(config, task_schema):
             self.logger.error(f"{path} schema errors:\n\t{self.pp.pformat(self.v.errors)}")
             return
+        self.logger.update_subject(f'{task} ({config["slug"]})')
         # MANUALLY CHECK:
         # - if at least "en" information is given (restriction to be lifted later)
         if "information" not in config or "en" not in config["information"]:
@@ -172,9 +171,10 @@ class AccessValidator:
                 if not self.v.validate(info, task_information_schema):
                     self.logger.error(f"{path} {name} information schema errors: {self.pp.pformat(self.v.errors)}")
                 # - if referenced instructions_file exists
-                instructions_file = info["instructions_file"]
-                if not os.path.isfile(os.path.join(task, instructions_file)):
-                    self.logger.error(f"{path} {name} references non-existing {instructions_file}")
+                if "instructions_file" in info:
+                    instructions_file = info["instructions_file"]
+                    if not os.path.isfile(os.path.join(task, instructions_file)):
+                        self.logger.error(f"{path} {name} references non-existing {instructions_file}")
         # - if each file in files actually exists
         for context, files in config["files"].items():
             for file in files:
@@ -204,8 +204,6 @@ class AccessValidator:
             self.execute_grade_command(task, config, 0)
         if self.args.grade_solution:
             self.execute_grade_command(task, config, config["max_points"], self.args.solve_command)
-        if error_count == self.logger.error_count():
-            self.logger.success(f"{path}")
 
     def execute_grade_command(self, task, config, expected_points, solve_command=None):
         grade_results = self.execute_command(task, config, "grade_command", solve_command=solve_command)
@@ -313,5 +311,5 @@ class AccessValidator:
             case "course": self.validate_course(self.args.directory)
             case "assignment": self.validate_assignment(self.args.directory)
             case "task": self.validate_task(self.args.directory)
-        return self.logger.successes, self.logger.errors
+        return self.logger
 

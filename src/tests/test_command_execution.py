@@ -23,21 +23,21 @@ class CommandExecutionTests(unittest.TestCase):
     def test_valid_config(self):
         validator = self.validator(files('tests.resources.execute').joinpath('valid'),
           ["run", "test", "template", "solution"])
-        valid, errors = validator.run()
+        errors = validator.run().error_list()
         self.assertEqual(0, len(errors))
 
     def test_global_file(self):
         validator = self.validator(files('tests.resources.execute.global-file.as').joinpath('task'),
           ["template"], global_file=["universal/harness.py"],
           course_root=str(files('tests.resources.execute').joinpath('global-file')))
-        valid, errors = validator.run()
+        errors = validator.run().error_list()
         self.assertEqual(0, len(errors))
 
     def test_invalid_run_command(self):
         validator = self.validator(
             files('tests.resources.execute').joinpath('run-command-returns-nonzero'),
             ["run"])
-        valid, errors = validator.run()
+        errors = validator.run().error_list()
         self.assertEqual(1, len(errors))
         self.assertIn("Expected returncode 0 but got ", errors[0])
 
@@ -45,7 +45,7 @@ class CommandExecutionTests(unittest.TestCase):
         validator = self.validator(
             files('tests.resources.execute').joinpath('test-command-returns-nonzero'),
             ["test"])
-        valid, errors = validator.run()
+        errors = validator.run().error_list()
         self.assertEqual(1, len(errors))
         self.assertIn("Expected returncode 0 but got ", errors[0])
 
@@ -53,7 +53,7 @@ class CommandExecutionTests(unittest.TestCase):
         validator = self.validator(
             files('tests.resources.execute').joinpath('grading-gives-points-for-template'),
             ["template"])
-        valid, errors = validator.run()
+        errors = validator.run().error_list()
         self.assertEqual(1, len(errors))
         self.assertIn("1 points awarded instead of expected 0", errors[0])
 
@@ -61,7 +61,7 @@ class CommandExecutionTests(unittest.TestCase):
         validator = self.validator(
             files('tests.resources.execute').joinpath('grading-not-giving-max-points-for-solution'),
             ["solution"])
-        valid, errors = validator.run()
+        errors = validator.run().error_list()
         self.assertEqual(1, len(errors))
         self.assertIn("1 points awarded instead of expected 2", errors[0])
 
