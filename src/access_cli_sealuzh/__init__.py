@@ -56,7 +56,7 @@ def main():
         args = autodetect(args)
 
     if args.user == "autodetect":
-        args.user = os.getuid()
+        args.user = str(os.getuid())
 
     logger = AccessValidator(args).run()
 
