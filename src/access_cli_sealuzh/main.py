@@ -32,7 +32,7 @@ def autodetect(args):
     args.run = 0
     args.test = 0
 
-    # detect global files if not set manually
+    # set course root if not set manually
     if args.course_root == None:
         if level == "course":
             course_config = config

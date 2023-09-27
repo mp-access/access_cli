@@ -44,8 +44,8 @@ def main():
             sys.exit(11)
 
     if args.global_file != []:
-        if not args.course_root:
-            print("If --global-file is passed, --course-root must be provided")
+        if not args.course_root and not args.auto_detect:
+            print("If --global-file is passed without --auto-detect, then --course-root must be provided")
             sys.exit(12)
 
     if not args.auto_detect:
