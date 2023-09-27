@@ -4,14 +4,14 @@ import unittest
 from types import SimpleNamespace
 from importlib.resources import files
 
-class RecursiveValidationTests(unittest.TestCase):
+class AutoDetectionTests(unittest.TestCase):
 
     def validator(self, directory):
         from access_cli_sealuzh.main import AccessValidator, autodetect
         args = SimpleNamespace(directory=str(directory), course_root=None,
                                solve_command="rm -R task; cp -R solution task",
                                grade_template = False, grade_solution=False,
-                               global_file=[], user="",
+                               global_file=[], user="", run=0, test=1,
                                verbose=False, recursive=False)
         args = autodetect(args)
         return AccessValidator(args)

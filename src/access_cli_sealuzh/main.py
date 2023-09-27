@@ -26,11 +26,12 @@ def autodetect(args):
         level = "task"
     args.level = level
 
-    # set autodetect defaults
-    args.recursive = True
-    args.grade_template = True
-    args.run = 0
-    args.test = 0
+    # set autodetect defaults if not set manually
+    if args.grade_template == None: args.grade_template = True
+    if args.grade_solution == None: args.grade_solution = True
+    if args.recursive == None: args.recursive = True
+    if args.run == None: args.run = 0
+    if args.test == None: args.test = 1
 
     # set course root if not set manually
     if args.course_root == None:
@@ -45,6 +46,9 @@ def autodetect(args):
             course_config_path = os.path.join(course_root, "config.toml")
             if os.path.exists(course_config_path):
                 course_config = AccessValidator.read_config(course_config_path)
+            else:
+                print(f"Given level {level}, assumed {course_config_path} would be the course config.toml, but it does not exist. You must set --course manually")
+                sys.exit(11)
 
         args.global_file = course_config["global_files"]["grading"]
         args.course_root = course_root

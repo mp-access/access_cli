@@ -19,9 +19,11 @@ def main():
         help = "execute the run command and expect provided return code.")
     parser.add_argument('-t', '--test', type=int,
         help = "execute the test command and expect provided return code.")
-    parser.add_argument('-g', '--grade-template', action='store_true', default=False,
+    parser.add_argument('-g', '--grade-template',
+        action=argparse.BooleanOptionalAction,
         help = "execute the grade command and expect 0 points to be awarded.")
-    parser.add_argument('-G', '--grade-solution', action='store_true', default=False,
+    parser.add_argument('-G', '--grade-solution',
+        action=argparse.BooleanOptionalAction,
         help = "execute the grade command and expect max-points to be awarded.")
     parser.add_argument('-s', '--solve-command', type=str,
         help = "shell command which solves the exercise")
@@ -29,9 +31,11 @@ def main():
         help = "global files (relative to course root)")
     parser.add_argument('-C', '--course-root',
         help = "path to course root, needed when specifying -f")
-    parser.add_argument('-v', '--verbose', action='store_true', default=False,
+    parser.add_argument('-v', '--verbose', default=False,
+        action=argparse.BooleanOptionalAction,
         help = "show output when running executions")
-    parser.add_argument('-R', '--recursive', action='store_true', default=False,
+    parser.add_argument('-R', '--recursive',
+        action=argparse.BooleanOptionalAction,
         help = "recurse into nested structures (assignments/tasks) if applicable")
     parser.add_argument('-A', '--auto-detect', action='store_true', default=False,
         help = "attempt to auto-detect what is being validated")
@@ -49,6 +53,12 @@ def main():
             sys.exit(12)
 
     if not args.auto_detect:
+        if args.grade_template == None:
+           args.grade_template = False
+        if args.grade_solution == None:
+           args.grade_solution = False
+        if args.recursive == None:
+           args.recursive = False
         if not args.level:
             print("Unless --auto-detect is set, must specify level")
             sys.exit(10)
