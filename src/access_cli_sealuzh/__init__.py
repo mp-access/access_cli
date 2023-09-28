@@ -19,12 +19,15 @@ def main():
         help = "execute the run command and expect provided return code.")
     parser.add_argument('-t', '--test', type=int,
         help = "execute the test command and expect provided return code.")
+    parser.add_argument('-T', '--test-solution',
+        action=argparse.BooleanOptionalAction,
+        help = "execute the test command provided the solution and expect a zero return code.")
     parser.add_argument('-g', '--grade-template',
         action=argparse.BooleanOptionalAction,
-        help = "execute the grade command and expect 0 points to be awarded.")
+        help = "grade the template and expect 0 points to be awarded.")
     parser.add_argument('-G', '--grade-solution',
         action=argparse.BooleanOptionalAction,
-        help = "execute the grade command and expect max-points to be awarded.")
+        help = "grade the solution and expect max-points to be awarded.")
     parser.add_argument('-s', '--solve-command', type=str,
         help = "shell command which solves the exercise")
     parser.add_argument('-f', '--global-file', action='append', default=[],
@@ -42,10 +45,13 @@ def main():
     args = parser.parse_args()
 
 
-    if args.grade_solution:
-        if not args.solve_command:
+    if not args.solve_command:
+        if args.grade_solution:
             print("If --grade-solution is passed, --solve-command must be provided")
             sys.exit(11)
+        if args.test_solution:
+            print("If --test-solution is passed, --solve-command must be provided")
+            sys.exit(13)
 
     if args.global_file != []:
         if not args.course_root and not args.auto_detect:
@@ -53,6 +59,8 @@ def main():
             sys.exit(12)
 
     if not args.auto_detect:
+        if args.test_solution == None:
+           args.test_solution = False
         if args.grade_template == None:
            args.grade_template = False
         if args.grade_solution == None:

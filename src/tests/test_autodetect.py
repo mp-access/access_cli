@@ -10,6 +10,7 @@ class AutoDetectionTests(unittest.TestCase):
         from access_cli_sealuzh.main import AccessValidator, autodetect
         args = SimpleNamespace(directory=str(directory), course_root=None,
                                solve_command="rm -R task; cp -R solution task",
+                               test_solution = False,
                                grade_template = False, grade_solution=False,
                                global_file=[], user="", run=0, test=1,
                                verbose=False, recursive=False)
@@ -29,6 +30,5 @@ class AutoDetectionTests(unittest.TestCase):
     def test_task(self):
         validator = self.validator(files('tests.resources.autodetect.valid-course.assignment').joinpath('task'))
         errors = validator.run().error_list()
-        print(errors)
         self.assertEqual(0, len(errors))
 

@@ -6,5 +6,5 @@ class PublicTestSuite(TestCase):
     def test_x_is_number(self):
         import script
         x = script.x
-        assert(isinstance(x, (int, float)))
+        self.assertEqual(x, 42)
 

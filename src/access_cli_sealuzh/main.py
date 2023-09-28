@@ -27,6 +27,7 @@ def autodetect(args):
     args.level = level
 
     # set autodetect defaults if not set manually
+    if args.test_solution == None: args.test_solution = True
     if args.grade_template == None: args.grade_template = True
     if args.grade_solution == None: args.grade_solution = True
     if args.recursive == None: args.recursive = True
@@ -204,6 +205,8 @@ class AccessValidator:
             self.execute_command(task, config, "run_command", self.args.run)
         if type(self.args.test) == int and "test_command" in config["evaluator"]:
             self.execute_command(task, config, "test_command", self.args.test)
+        if self.args.test_solution:
+            self.execute_command(task, config, "test_command", 0, solve_command=self.args.solve_command)
         if self.args.grade_template:
             self.execute_grade_command(task, config, 0)
         if self.args.grade_solution:
@@ -288,7 +291,10 @@ class AccessValidator:
                 # Check return codes
                 if expected_returncode != None:
                     if expected_returncode != result.returncode:
-                        self.logger.error(f"{task} {command} ({command_type}): Expected returncode {expected_returncode} but got {result.returncode}")
+                        if solve_command != None:
+                            self.logger.error(f"{task} {command} ({command_type} on solution): Expected returncode {expected_returncode} but got {result.returncode}")
+                        else:
+                            self.logger.error(f"{task} {command} ({command_type}): Expected returncode {expected_returncode} but got {result.returncode}")
                 if os.path.isfile(os.path.join(workspace, "grade_results.json")):
                     with open(os.path.join(workspace, "grade_results.json")) as grade_result:
                         return json.load(grade_result)

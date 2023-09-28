@@ -8,21 +8,20 @@ class CommandExecutionTests(unittest.TestCase):
 
     def validator(self, directory, commands, global_file=[], course_root=None):
         from access_cli_sealuzh.main import AccessValidator
-        print(directory)
-        print(str(directory))
         args = SimpleNamespace(directory=str(directory), execute=True, verbose=False,
                                global_file=global_file, course_root=course_root,
                                run=0 if "run" in commands else None, user="",
-                               test=0 if "test" in commands else None,
+                               test=1 if "test" in commands else None,
+                               test_solution=True if "test_solution" in commands else False,
                                grade_template=True if "template" in commands else False,
                                grade_solution=True if "solution" in commands else False,
                                solve_command = "cp solution.py script.py",
-                               level="task", recursive=False,)
+                               level="task", recursive=False)
         return AccessValidator(args)
 
     def test_valid_config(self):
         validator = self.validator(files('tests.resources.execute').joinpath('valid'),
-          ["run", "test", "template", "solution"])
+          ["run", "test", "test_solution", "template", "solution"])
         errors = validator.run().error_list()
         self.assertEqual(0, len(errors))
 
@@ -41,10 +40,18 @@ class CommandExecutionTests(unittest.TestCase):
         self.assertEqual(1, len(errors))
         self.assertIn("Expected returncode 0 but got ", errors[0])
 
-    def test_invalid_test_command(self):
+    def test_test_template_succeeds(self):
         validator = self.validator(
-            files('tests.resources.execute').joinpath('test-command-returns-nonzero'),
+            files('tests.resources.execute').joinpath('test-on-template-returns-zero'),
             ["test"])
+        errors = validator.run().error_list()
+        self.assertEqual(1, len(errors))
+        self.assertIn("Expected returncode 1 but got ", errors[0])
+
+    def test_test_on_solution_fails(self):
+        validator = self.validator(
+            files('tests.resources.execute').joinpath('test-on-solution-returns-nonzero'),
+            ["test_solution"])
         errors = validator.run().error_list()
         self.assertEqual(1, len(errors))
         self.assertIn("Expected returncode 0 but got ", errors[0])

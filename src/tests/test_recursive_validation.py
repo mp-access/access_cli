@@ -9,7 +9,7 @@ class RecursiveValidationTests(unittest.TestCase):
     def validator(self, directory):
         from access_cli_sealuzh.main import AccessValidator
         args = SimpleNamespace(directory=str(directory), execute=False,
-                               global_file=[], user="",
+                               global_file=[], user="", test_solution=False,
                                run=None, test=None, verbose=False,
                                grade_template=False, grade_solution=False,
                                level="course", recursive=True)
