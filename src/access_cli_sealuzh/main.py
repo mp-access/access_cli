@@ -231,6 +231,9 @@ class AccessValidator:
 
     def execute_command(self, task, config, command_type, expected_returncode=None, solve_command=None):
         docker_image = config["evaluator"]["docker_image"]
+        if command_type not in config["evaluator"]:
+            print(f"{command_type} command not specified in config, skipping...")
+            return
         command = config["evaluator"][command_type]
         with tempfile.TemporaryDirectory() as workspace:
             # Copy task to a temporary directory for execution

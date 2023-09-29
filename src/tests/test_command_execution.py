@@ -25,6 +25,12 @@ class CommandExecutionTests(unittest.TestCase):
         errors = validator.run().error_list()
         self.assertEqual(0, len(errors))
 
+    def test_valid_config_without_test_command(self):
+        validator = self.validator(files('tests.resources.execute').joinpath('valid-no-test'),
+          ["run", "test", "test_solution", "template", "solution"])
+        errors = validator.run().error_list()
+        self.assertEqual(0, len(errors))
+
     def test_global_file(self):
         validator = self.validator(files('tests.resources.execute.global-file.as').joinpath('task'),
           ["template"], global_file=["universal/harness.py"],
