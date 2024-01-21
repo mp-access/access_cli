@@ -53,7 +53,8 @@ def main():
             print("If --test-solution is passed, --solve-command must be provided")
             sys.exit(13)
 
-    if args.global_file != []:
+    args.global_file = set(args.global_file)
+    if args.global_file != set():
         if not args.course_root and not args.auto_detect:
             print("If --global-file is passed without --auto-detect, then --course-root must be provided")
             sys.exit(12)

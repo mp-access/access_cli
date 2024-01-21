@@ -99,6 +99,9 @@ task_schema = {
                      "grading":     {'required': True, 'type': 'list',
                                      'schema': {'type': 'string'}},
                      "solution":    {'required': True, 'type': 'list',
-                                     'schema': {'type': 'string'}}}}
+                                     'schema': {'type': 'string'}},
+                     "persist":     {'required': False, 'type': 'list',
+                                     'schema': {'type': 'string'}}
+                    }}
 }
 

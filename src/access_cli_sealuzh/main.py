@@ -51,7 +51,7 @@ def autodetect(args):
                 print(f"Given level {level}, assumed {course_config_path} would be the course config.toml, but it does not exist. You must set --course manually")
                 sys.exit(11)
 
-        args.global_file = course_config["global_files"]["grading"]
+        args.global_file.update(set(course_config["global_files"]["grading"]))
         args.course_root = course_root
 
     print("Using the following auto-detected arguments:")
@@ -120,11 +120,16 @@ class AccessValidator:
                 for file in files:
                     if not os.path.isfile(os.path.join(course, file)):
                         self.logger.error(f"{path} global files references non-existing file: {file}")
+        # Check assignments if recursive
         if self.args.recursive:
             for assignment in config["assignments"]:
-                self.validate_assignment(os.path.join(course, assignment))
+                self.validate_assignment(course, assignment)
 
-    def validate_assignment(self, assignment):
+    def validate_assignment(self, course_dir=None, assignment_dir=None):
+        if course_dir == None:
+            assignment = assignment_dir
+        else:
+            assignment = os.path.join(course_dir, assignment_dir)
         self.print(f" > Validating assignment {assignment}", True)
         self.logger.set_subject(assignment)
         try: path, config = self.read_directory_config(assignment)
@@ -152,11 +157,18 @@ class AccessValidator:
             for name, info in config["information"].items():
                 if not self.v.validate(info, assignment_information_schema):
                     self.logger.error(f"{path}.{name} information schema errors: {self.pp.pformat(self.v.errors)}")
+        # Check tasks if recursive
         if self.args.recursive:
             for task in config["tasks"]:
-                self.validate_task(os.path.join(assignment, task))
+                self.validate_task(course_dir, assignment_dir, task)
 
-    def validate_task(self, task):
+    def validate_task(self, course_dir=None, assignment_dir=None, task_dir=None):
+        if course_dir == None and assignment_dir == None:
+            task = task_dir
+        elif course_dir == None:
+            task = os.path.join(assignment_dir, task_dir)
+        else:
+            task = os.path.join(course_dir, assignment_dir, task_dir)
         self.print(f" > Validating task {task}", True)
         self.logger.set_subject(task)
         try: path, config = self.read_directory_config(task)
@@ -182,6 +194,9 @@ class AccessValidator:
                         self.logger.error(f"{path} {name} references non-existing {instructions_file}")
         # - if each file in files actually exists
         for context, files in config["files"].items():
+            # persistent result files don't exist
+            if context == "persist":
+                continue
             for file in files:
                 if not os.path.isfile(os.path.join(task, file)):
                     self.logger.error(f"{path} files references non-existing file: {file}")
@@ -224,7 +239,7 @@ class AccessValidator:
         abs_root = os.path.abspath(task)
         abs_file = os.path.join(abs_root, file_path)
         if not os.path.exists(abs_file):
-            self.logger.error(f"{task} referenced file {file_path} does not exist")
+            self.logger.error(f"referenced file {file_path} does not exist")
             return
         os.makedirs(os.path.join(workspace, os.path.dirname(file_path)), exist_ok=True)
         shutil.copyfile(abs_file, os.path.join(workspace, file_path))
@@ -244,10 +259,9 @@ class AccessValidator:
                 for file in config["files"]["grading"]:
                     self.copy_file(task, file, workspace)
                     # Copy global files
-                    if self.args.global_file != []:
-                        for file in self.args.global_file:
-                            course_root = self.args.course_root
-                            self.copy_file(os.path.abspath(course_root), file, workspace)
+                    for file in self.args.global_file:
+                        course_root = self.args.course_root
+                        self.copy_file(os.path.abspath(course_root), file, workspace)
             # If grading solution, copy solution files, too
             if solve_command != None:
                 for file in config["files"]["solution"]:
@@ -304,7 +318,7 @@ class AccessValidator:
             except subprocess.TimeoutExpired:
                 with open(cid_file) as cidf:
                     cid = cidf.read()
-                    self.logger.error("{task} {command}: Timeout during executiong (infinite loop?)")
+                    self.logger.error(f"{task} {command}: Timeout during executiong (infinite loop?)")
                     self.print(f"killing container {cid}")
                     result = subprocess.run(["docker", "kill", cid], capture_output=True)
 
@@ -323,7 +337,7 @@ class AccessValidator:
     def run(self):
         match self.args.level:
             case "course": self.validate_course(self.args.directory)
-            case "assignment": self.validate_assignment(self.args.directory)
-            case "task": self.validate_task(self.args.directory)
+            case "assignment": self.validate_assignment(assignment_dir = self.args.directory)
+            case "task": self.validate_task(task_dir = self.args.directory)
         return self.logger
 
