@@ -12,7 +12,7 @@ class AutoDetectionTests(unittest.TestCase):
                                solve_command="rm -R task; cp -R solution task",
                                test_solution = False,
                                grade_template = False, grade_solution=False,
-                               global_file=[], user="", run=0, test=1,
+                               global_file=set(), user="", run=0, test=1,
                                verbose=False, recursive=False)
         args = autodetect(args)
         return AccessValidator(args)

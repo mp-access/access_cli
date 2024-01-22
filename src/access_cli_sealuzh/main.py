@@ -289,13 +289,16 @@ class AccessValidator:
                 # Run the task command in docker
                 instruction = [
                    "docker", "run", "--rm",
-                   "--user", self.args.user,
                    "--cidfile", cid_file,
                    "--network", "none",
                    "-v", f"{workspace}:/workspace", "-w", "/workspace",
                    docker_image,
                    *command.split()
                 ]
+                # Windows doesn't have os.getuid(), so we only use it otherwise
+                if self.args.user is not None:
+                    instruction.insert(3, "--user")
+                    instruction.insert(4, self.args.user)
                 result = subprocess.run(instruction, capture_output=True, timeout=30)
                 # Print results
                 self.print_command_result(
