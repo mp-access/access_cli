@@ -4,6 +4,43 @@ A tool for verifying ACCESS course configurations locally.
 
 ## Installation
 
+First, make sure you have docker installed and working correctly:
+
+```
+docker run hello-world
+```
+
+Then, install `access-cli`:
+
+```
+pip install access-cli-sealuzh
+```
+
+## Quick start:
+
+Run validation on the current (and all nested) folders:
+```
+access-cli -Av
+```
+
+If you have problems relating to docker prermissions, you may need to specify an empty user or a specific user, e.g.:
+```
+access-cli -Av -u=
+# or
+access-cli -Av -u=1001
+```
+
+To check if the sample solutions work correctly by providing a command that replaces templates with solutions:
+
+```
+access-cli -AvGs "cp -R solution/* task/"
+```
+
+If you use the *global files* feature, the global files must be listed relative to the course root (unless running in the course root), for example:
+```
+access-cli -AvGs "cp -R solution/* task/" -f universal/harness.py
+```
+
 ## Usage
 
 `access-cli` verifies courses, assignments and tasks for deployment on ACCESS.
