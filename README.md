@@ -246,3 +246,12 @@ access-cli -l task -d ./ -r0 -t0 -gGvs "cp solution.py script.py" -f "universal/
 
 will copy `../../universal/harness.py` into the docker container before grading.
 
+
+## Development
+
+To install access-cli based on local code (adjust the version when necessary):
+
+```
+rm -R venv; python -m build; python -m venv venv; ./venv/bin/python -m pip install dist/access_cli_sealuzh-0.1.3-py3-none-any.whl
+```
+
