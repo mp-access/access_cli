@@ -77,7 +77,7 @@ task_information_schema = {
 # - that none of the grading or solution files are editable or visible
 # - that editable files are also visible
 # - OPTIONALLY: that the run, test and grade commands execute correctly
-task_schema = {
+task_schema = { # TODO GBAI: add additional fields
     "slug":         {'required': True, 'type': 'string'},
     "authors":      {'required': False, 'type': 'list',
                      'schema': {'type': 'string'}},

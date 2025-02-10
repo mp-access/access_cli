@@ -226,6 +226,17 @@ class AccessValidator:
             self.execute_grade_command(task, config, 0)
         if self.args.grade_solution:
             self.execute_grade_command(task, config, config["max_points"], self.args.solve_command)
+        # TODO GBAI:
+        # * OPTIONALLY: use AI grading on sample solution (use self.args.solve_command like above)
+
+        # TODO GBAI:
+        # * def execute_ai_grading(...?
+        # * first check if the AI service is running, if not, pull and start
+        # * self.logger.error if something goes wrong
+        # * if there are no errors, that means the validation passes
+        # * validate that the template receives 0 points
+        # * validate that the sample solution receives expected llm.max_points
+        # * use self.print to show AI results (points and feedback)
 
     def execute_grade_command(self, task, config, expected_points, solve_command=None):
         grade_results = self.execute_command(task, config, "grade_command", solve_command=solve_command)
