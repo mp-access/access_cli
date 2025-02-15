@@ -13,6 +13,7 @@ __pycache__/
 # C extensions
 *.so
 
+
 # Distribution / packaging
 .Python
 build/
@@ -75,6 +76,9 @@ Sessionx.vim
 tags
 # Persistent undo
 [._]*.un~
+
+# Local
+.idea/
 
 # End of https://www.toptal.com/developers/gitignore/api/vim,python
 

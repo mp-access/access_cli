@@ -11,6 +11,8 @@ from pathlib import Path
 from access_cli_sealuzh.logger import Logger
 from cerberus import Validator
 from access_cli_sealuzh.schema import *
+import requests
+import time
 
 def autodetect(args):
     # if a directory has been specified, assume that's what we're validating
@@ -222,21 +224,61 @@ class AccessValidator:
             self.execute_command(task, config, "test_command", self.args.test)
         if self.args.test_solution:
             self.execute_command(task, config, "test_command", 0, solve_command=self.args.solve_command)
-        if self.args.grade_template:
-            self.execute_grade_command(task, config, 0)
-        if self.args.grade_solution:
-            self.execute_grade_command(task, config, config["max_points"], self.args.solve_command)
-        # TODO GBAI:
-        # * OPTIONALLY: use AI grading on sample solution (use self.args.solve_command like above)
+
+        # Skip non-AI validation if --llm-only is set
+        if not self.args.llm_only:
+            if self.args.grade_template:
+                self.execute_grade_command(task, config, 0)
+            if self.args.grade_solution:
+                self.execute_grade_command(task, config, config["max_points"], self.args.solve_command)
+
+
+        # Validate LLM configuration if present
+        if "llm" in config:
+            # Check required files exist
+            for file_key in ["submission", "rubrics", "examples", "solution"]:
+                if file_key in config["llm"]:
+                    file_path = config["llm"][file_key]
+                    if not os.path.isfile(os.path.join(task, file_path)):
+                        self.logger.error(f"{path} llm references non-existing {file_key} file: {file_path}")
+
+            # Check optional files exist if specified
+            for file_key in ["post", "pre"]:
+                if file_key in config["llm"]:
+                    file_path = config["llm"][file_key]
+                    if not os.path.isfile(os.path.join(task, file_path)):
+                        self.logger.error(f"{path} llm references non-existing {file_key} file: {file_path}")
+
+            # Validate that referenced files are in the correct context
+            for file_path in [config["llm"].get(k) for k in ["rubrics", "examples", "solution", "post", "pre"] if k in config["llm"]]:
+                if file_path in config["files"]["editable"]:
+                    self.logger.error(f"{path} llm file {file_path} marked as editable")
+                if file_path in config["files"]["visible"]:
+                    self.logger.error(f"{path} llm file {file_path} marked as visible")
+
+        # Run AI validation if --llm-only is set
+        if self.args.llm_only and "llm" in config:
+            # Check if we should override model from CLI
+            model_override = getattr(self.args, 'llm_model', None)  # Safely get llm_model
+            if model_override:  # Override model from CLI
+                config["llm"]["model"] = model_override
+                
+            if self.args.grade_template:
+                self.execute_ai_grading(task, config, 0)
+            if self.args.grade_solution:
+                self.execute_ai_grading(task, config, config["llm"]["max_points"], test_solution=True)
 
         # TODO GBAI:
-        # * def execute_ai_grading(...?
-        # * first check if the AI service is running, if not, pull and start
-        # * self.logger.error if something goes wrong
-        # * if there are no errors, that means the validation passes
-        # * validate that the template receives 0 points
-        # * validate that the sample solution receives expected llm.max_points
-        # * use self.print to show AI results (points and feedback)
+
+                # TODO GBAI:
+                # * def execute_ai_grading(...?
+                # * first check if the AI service is running, if not, pull and start
+                # * self.logger.error if something goes wrong
+                # * if there are no errors, that means the validation passes
+                # * validate that the template receives 0 points
+                # * validate that the sample solution receives expected llm.max_points
+            # * use self.print to show AI results (points and feedback)
+
 
     def execute_grade_command(self, task, config, expected_points, solve_command=None):
         grade_results = self.execute_command(task, config, "grade_command", solve_command=solve_command)
@@ -348,10 +390,265 @@ class AccessValidator:
         if self.args.verbose or verbose:
             print(string)
 
+    def read_rubrics_from_toml(self, task_path, rubrics_file):
+        """Read and parse rubrics TOML file into JSON string."""
+        abs_path = os.path.join(task_path, rubrics_file)
+        if not os.path.exists(abs_path):
+            return None
+            
+        with open(abs_path, 'rb') as f:
+            rubrics_config = tomli.load(f)
+            
+        rubrics_list = []
+        if "rubrics" in rubrics_config:
+            for rubric in rubrics_config["rubrics"]:
+                rubrics_list.append({
+                    "id": rubric["id"],
+                    "title": rubric["title"],
+                    "points": float(rubric["points"])
+                })
+                
+        return rubrics_list
+
+    def read_examples_from_toml(self, task_path, examples_file):
+        """Read and parse examples TOML file into JSON string."""
+        abs_path = os.path.join(task_path, examples_file)
+        if not os.path.exists(abs_path):
+            return None
+            
+        with open(abs_path, 'rb') as f:
+            examples_config = tomli.load(f)
+            
+        examples_list = []
+        if "examples" in examples_config:
+            for example in examples_config["examples"]:
+                examples_list.append({
+                    "answer": example["answer"],
+                    "points": str(example["points"])
+                })
+                
+        return examples_list
+
+    def start_llm_service(self):
+        """Start the LLM service container."""
+        try:
+            # Pull the images
+            if self.args.verbose:
+                self.logger.info("Pulling required images")
+            subprocess.run(["docker", "pull", "sealuzh/graded-by-ai"], check=True, capture_output=True)
+            subprocess.run(["docker", "pull", "redis:latest"], check=True, capture_output=True)
+            
+            # Create network if it doesn't exist
+            subprocess.run(["docker", "network", "create", "llm-network"], capture_output=True)
+            
+            # Start Redis container
+            subprocess.run([
+                "docker", "run", "--rm", "-d",
+                "--network", "llm-network",
+                "--name", "redis",
+                "redis:latest"
+            ], check=True, capture_output=True)
+            
+            # Create temporary file for container ID and ensure it doesn't exist
+            self.cid_file = tempfile.NamedTemporaryFile(delete=False)
+            if os.path.exists(self.cid_file.name):
+                os.unlink(self.cid_file.name)
+            
+            # Start the LLM service container
+            instruction = [
+                "docker", "run", "--rm", "-d",
+                "--cidfile", self.cid_file.name,
+                "--network", "llm-network",
+                "-p", "4000:4000",
+                "-e", "REDIS_HOST=redis",
+                "sealuzh/graded-by-ai"
+            ]
+            
+            subprocess.run(instruction, check=True, capture_output=True)
+            
+            # Wait for service to be ready
+            start_time = time.time()
+            while time.time() - start_time < 30:
+                with open(self.cid_file.name) as f:
+                    container_id = f.read().strip()
+                result = subprocess.run(["docker", "logs", container_id], capture_output=True, text=True)
+                if "Nest application successfully started" in result.stdout:
+                    if self.args.verbose:
+                        self.logger.info("LLM service is ready")
+                    return
+                time.sleep(1)
+                    
+            raise Exception("LLM service failed to start within 30 seconds")
+            
+        except Exception as e:
+            self.stop_llm_service()
+            raise e
+
+    def stop_llm_service(self):
+        """Stop the LLM service container and cleanup."""
+        if not hasattr(self, 'cid_file') or self.cid_file is None:
+            return
+            
+        if not self.args.llm_keep_service:
+            try:
+                # Stop LLM container
+                with open(self.cid_file.name) as f:
+                    container_id = f.read().strip()
+                if container_id:
+                    subprocess.run(["docker", "stop", container_id], check=True)
+                
+                # Stop Redis container
+                subprocess.run(["docker", "stop", "redis"], check=True)
+                
+                # Remove network
+                subprocess.run(["docker", "network", "rm", "llm-network"], check=True)
+                
+            except Exception as e:
+                self.logger.error(f"Failed to stop containers: {str(e)}")
+            finally:
+                if os.path.exists(self.cid_file.name):
+                    os.unlink(self.cid_file.name)
+                self.cid_file = None
+
+    def execute_ai_grading(self, task, config, expected_points=None, test_solution=None):
+        if "llm" not in config:
+            return
+            
+        try:
+            self.start_llm_service()
+            
+            llm_config = config["llm"]
+            
+            # Read submission or solution content
+            if test_solution:  # If validating solution
+                submission_content = self.read_text_file(task, llm_config["solution"])
+            else:  # If validating submission
+                submission_content = self.read_text_file(task, llm_config["submission"])
+            
+            if not submission_content:
+                self.logger.error(f"Could not read {'solution' if test_solution else 'submission'} file")
+                return
+
+            # Read and parse rubrics and examples
+            rubrics_content = self.read_rubrics_from_toml(task, llm_config["rubrics"])
+            examples_content = self.read_examples_from_toml(task, llm_config["examples"])
+            solution_content = self.read_text_file(task, llm_config["solution"])
+            
+            # Read optional files
+            pre_content = self.read_text_file(task, llm_config.get("pre")) if "pre" in llm_config else None
+            post_content = self.read_text_file(task, llm_config.get("post")) if "post" in llm_config else None
+            prompt_content = self.read_text_file(task, llm_config.get("prompt")) if "prompt" in llm_config else None
+
+            # Read instruction file
+            instruction_content = self.read_text_file(task, config["information"]["en"]["instructions_file"])
+
+            # Prepare evaluation request
+            model_family = llm_config.get("model_family", "claude")
+            default_model = "claude-3-5-sonnet-latest" if model_family == "claude" else "gpt-4o-mini"
+            model = llm_config.get("model", default_model)
+
+            assistant_request = {
+                "question": instruction_content or "No instructions provided",
+                "answer": submission_content,
+                "llmType": model_family,
+                "chainOfThought": llm_config.get("cot", False),
+                "votingCount": llm_config.get("voting", 1),
+                "rubrics": rubrics_content if rubrics_content else [],
+                "prompt": prompt_content,
+                "prePrompt": pre_content,
+                "postPrompt": post_content,
+                "temperature": llm_config.get("temperature"),
+                "fewShotExamples": examples_content if examples_content else [],
+                "maxPoints": llm_config["max_points"],
+                "modelSolution": solution_content,
+                "llmModel": model,
+                "apiKey": self.args.llm_api_key
+            }
+
+            # Initial request to start evaluation
+            response = requests.post(
+                f"{self.args.assistant_url}/evaluate",
+                json=assistant_request
+            )
+            response.raise_for_status()
+            task_id = response.json()["jobId"]
+
+            # Polling loop
+            max_attempts = 20
+            delay_seconds = 2
+            
+            for _ in range(max_attempts):
+                status_response = requests.get(
+                    f"{self.args.assistant_url}/evaluate/{task_id}"
+                )
+                status_response.raise_for_status()
+                status_data = status_response.json()
+                print("Polling: Current status of AI grading: ", status_data["status"])
+
+                if status_data["status"] == "completed":
+                    result = status_data["result"]
+                    
+                    # Print results
+                    self.print("╭──AI Grading Results──╮")
+                    self.print(f"│ Points: {result['points']}/{config['llm']['max_points']}")
+                    self.print("│ Feedback:")
+                    for line in result['feedback'].split('\n'):
+                        self.print(f"│ {line}")
+                    if result.get('hint'):
+                        self.print("│ Hint:")
+                        self.print(f"│ {result['hint']}")
+                    self.print("╰─────────────────────╯")
+
+                    # Validate points if expected_points is set
+                    if expected_points is not None and result['points'] != expected_points:
+                        self.logger.error(
+                            f"AI grading: got {result['points']} points but expected {expected_points}"
+                        )
+                    
+                    return result
+
+                elif status_data["status"] == "not_found":
+                    self.logger.error(f"AI grading task not found: {task_id}")
+                    return None
+                    
+                time.sleep(delay_seconds)
+            
+            self.logger.error("AI grading timed out")
+            return None
+
+        except requests.RequestException as e:
+            self.logger.error(f"AI grading failed: {str(e)}")
+            return None
+        finally:
+            self.stop_llm_service()
+
+    def read_text_file(self, task_path, file_path):
+        """Read a text file.
+        
+        Args:
+            task_path: Base path to the task directory
+            file_path: Relative path to the file
+            
+        Returns:
+            str: Content of the file or None if file doesn't exist
+        """
+        if not file_path:
+            return None
+            
+        abs_path = os.path.join(task_path, file_path)
+        if not os.path.exists(abs_path):
+            return None
+            
+        try:
+            with open(abs_path, 'r', encoding='utf-8') as f:
+                return f.read()
+        except Exception as e:
+            self.logger.error(f"Failed to read file {file_path}: {str(e)}")
+            return None
+
     def run(self):
         match self.args.level:
             case "course": self.validate_course(self.args.directory)
             case "assignment": self.validate_assignment(assignment_dir = self.args.directory)
             case "task": self.validate_task(task_dir = self.args.directory)
         return self.logger
-
