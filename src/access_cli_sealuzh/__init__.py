@@ -4,14 +4,6 @@ import sys
 
 def main():
     from access_cli_sealuzh.main import AccessValidator, autodetect
-
-    # TODO GBAI:
-    # * add option to pass API KEY
-    # * add additional options the service might need (model selection?)
-    # * by default, the AI service should stop after validation, add an option
-    #   to keep the service running
-    # * ensure that there is some combination of options such that ONLY the AI
-    #   grading is executed, since TAs will be relying on it to design the task
     parser = argparse.ArgumentParser(
         prog = 'access-cli',
         description = 'Validate ACCESS course configurations using the CLI')
