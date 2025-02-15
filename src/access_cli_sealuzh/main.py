@@ -171,10 +171,52 @@ class AccessValidator:
             task = os.path.join(assignment_dir, task_dir)
         else:
             task = os.path.join(course_dir, assignment_dir, task_dir)
+
         self.print(f" > Validating task {task}", True)
+
         self.logger.set_subject(task)
         try: path, config = self.read_directory_config(task)
         except FileNotFoundError: return
+
+        # Validate LLM configuration if present
+        if "llm" in config:
+            # Check required files exist
+            if "submission" in config["llm"]:
+                file_path = config["llm"]["submission"]
+                if not os.path.isfile(os.path.join(task, file_path)):
+                    self.logger.error(f"{path} llm references non-existing submission file: {file_path}")
+
+            # Check optional files exist if specified
+            for file_key in ["post", "pre", "rubrics", "examples", "solution", "prompt"]:
+                if file_key in config["llm"]:
+                    file_path = config["llm"][file_key]
+                    if not os.path.isfile(os.path.join(task, file_path)):
+                        self.logger.error(f"{path} llm references non-existing {file_key} file: {file_path}")
+
+            # Validate that referenced files are in the correct context
+            for file_path in [config["llm"].get(k) for k in ["rubrics", "examples", "solution", "post", "pre", "prompt"] if k in config["llm"]]:
+                if file_path in config["files"]["editable"]:
+                    self.logger.error(f"{path} llm file {file_path} marked as editable")
+                if file_path in config["files"]["visible"]:
+                    self.logger.error(f"{path} llm file {file_path} marked as visible")
+
+        # Run AI validation if --llm-only is set
+        if self.args.llm_only:
+            if "llm" in config:
+                # Check if we should override model from CLI
+                model_override = getattr(self.args, 'llm_model', None)  # Safely get llm_model
+                if model_override:  # Override model from CLI
+                    config["llm"]["model"] = model_override
+                    
+                if self.args.grade_template:
+                    self.execute_ai_grading(task, config, 0)
+                if self.args.grade_solution:
+                    self.execute_ai_grading(task, config, config["llm"]["max_points"], self.args.grade_solution)
+            else:
+                self.print(f"{path} llm not specified in config")
+
+            return
+   
         # schema validation
         if not self.v.validate(config, task_schema):
             self.logger.error(f"{path} schema errors:\n\t{self.pp.pformat(self.v.errors)}")
@@ -225,39 +267,13 @@ class AccessValidator:
         if self.args.test_solution:
             self.execute_command(task, config, "test_command", 0, solve_command=self.args.solve_command)
 
-        # Skip non-AI validation if --llm-only is set
-        if not self.args.llm_only:
-            if self.args.grade_template:
-                self.execute_grade_command(task, config, 0)
-            if self.args.grade_solution:
-                self.execute_grade_command(task, config, config["max_points"], self.args.solve_command)
-
-
-        # Validate LLM configuration if present
-        if "llm" in config:
-            # Check required files exist
-            for file_key in ["submission", "rubrics", "examples", "solution"]:
-                if file_key in config["llm"]:
-                    file_path = config["llm"][file_key]
-                    if not os.path.isfile(os.path.join(task, file_path)):
-                        self.logger.error(f"{path} llm references non-existing {file_key} file: {file_path}")
-
-            # Check optional files exist if specified
-            for file_key in ["post", "pre"]:
-                if file_key in config["llm"]:
-                    file_path = config["llm"][file_key]
-                    if not os.path.isfile(os.path.join(task, file_path)):
-                        self.logger.error(f"{path} llm references non-existing {file_key} file: {file_path}")
-
-            # Validate that referenced files are in the correct context
-            for file_path in [config["llm"].get(k) for k in ["rubrics", "examples", "solution", "post", "pre"] if k in config["llm"]]:
-                if file_path in config["files"]["editable"]:
-                    self.logger.error(f"{path} llm file {file_path} marked as editable")
-                if file_path in config["files"]["visible"]:
-                    self.logger.error(f"{path} llm file {file_path} marked as visible")
+        if self.args.grade_template:
+            self.execute_grade_command(task, config, 0)
+        if self.args.grade_solution:
+            self.execute_grade_command(task, config, config["max_points"], self.args.solve_command)
 
         # Run AI validation if --llm-only is set
-        if self.args.llm_only and "llm" in config:
+        if "llm" in config:
             # Check if we should override model from CLI
             model_override = getattr(self.args, 'llm_model', None)  # Safely get llm_model
             if model_override:  # Override model from CLI
@@ -267,17 +283,6 @@ class AccessValidator:
                 self.execute_ai_grading(task, config, 0)
             if self.args.grade_solution:
                 self.execute_ai_grading(task, config, config["llm"]["max_points"], test_solution=True)
-
-        # TODO GBAI:
-
-                # TODO GBAI:
-                # * def execute_ai_grading(...?
-                # * first check if the AI service is running, if not, pull and start
-                # * self.logger.error if something goes wrong
-                # * if there are no errors, that means the validation passes
-                # * validate that the template receives 0 points
-                # * validate that the sample solution receives expected llm.max_points
-            # * use self.print to show AI results (points and feedback)
 
 
     def execute_grade_command(self, task, config, expected_points, solve_command=None):
@@ -529,12 +534,10 @@ class AccessValidator:
                 self.logger.error(f"Could not read {'solution' if test_solution else 'submission'} file")
                 return
 
-            # Read and parse rubrics and examples
-            rubrics_content = self.read_rubrics_from_toml(task, llm_config["rubrics"])
-            examples_content = self.read_examples_from_toml(task, llm_config["examples"])
-            solution_content = self.read_text_file(task, llm_config["solution"])
-            
             # Read optional files
+            rubrics_content = self.read_rubrics_from_toml(task, llm_config.get("rubrics")) if "rubrics" in llm_config else []
+            examples_content = self.read_examples_from_toml(task, llm_config.get("examples")) if "examples" in llm_config else []
+            solution_content = self.read_text_file(task, llm_config.get("solution")) if "solution" in llm_config else None
             pre_content = self.read_text_file(task, llm_config.get("pre")) if "pre" in llm_config else None
             post_content = self.read_text_file(task, llm_config.get("post")) if "post" in llm_config else None
             prompt_content = self.read_text_file(task, llm_config.get("prompt")) if "prompt" in llm_config else None
@@ -546,9 +549,10 @@ class AccessValidator:
             model_family = llm_config.get("model_family", "claude")
             default_model = "claude-3-5-sonnet-latest" if model_family == "claude" else "gpt-4o-mini"
             model = llm_config.get("model", default_model)
-
+            max_points = llm_config.get("max_points", config.get("max_points", 1))
+            
             assistant_request = {
-                "question": instruction_content or "No instructions provided",
+                "question": instruction_content,
                 "answer": submission_content,
                 "llmType": model_family,
                 "chainOfThought": llm_config.get("cot", False),
@@ -557,9 +561,9 @@ class AccessValidator:
                 "prompt": prompt_content,
                 "prePrompt": pre_content,
                 "postPrompt": post_content,
-                "temperature": llm_config.get("temperature"),
+                "temperature": llm_config.get("temperature", 0.2),
                 "fewShotExamples": examples_content if examples_content else [],
-                "maxPoints": llm_config["max_points"],
+                "maxPoints": max_points,
                 "modelSolution": solution_content,
                 "llmModel": model,
                 "apiKey": self.args.llm_api_key
@@ -583,14 +587,15 @@ class AccessValidator:
                 )
                 status_response.raise_for_status()
                 status_data = status_response.json()
-                print("Polling: Current status of AI grading: ", status_data["status"])
+                self.print("Polling: Current status of LLM processing: ", status_data["status"])
 
+                # Task completed
                 if status_data["status"] == "completed":
                     result = status_data["result"]
                     
                     # Print results
                     self.print("╭──AI Grading Results──╮")
-                    self.print(f"│ Points: {result['points']}/{config['llm']['max_points']}")
+                    self.print(f"│ Points: {result['points']}/{max_points}")
                     self.print("│ Feedback:")
                     for line in result['feedback'].split('\n'):
                         self.print(f"│ {line}")
@@ -604,21 +609,18 @@ class AccessValidator:
                         self.logger.error(
                             f"AI grading: got {result['points']} points but expected {expected_points}"
                         )
-                    
-                    return result
-
+                    return
+                # Task not found
                 elif status_data["status"] == "not_found":
                     self.logger.error(f"AI grading task not found: {task_id}")
-                    return None
-                    
+                    return
+
                 time.sleep(delay_seconds)
             
-            self.logger.error("AI grading timed out")
-            return None
+            self.logger.error("LLM processing timed out")
 
         except requests.RequestException as e:
-            self.logger.error(f"AI grading failed: {str(e)}")
-            return None
+            self.logger.error(f"LLM processing failed: {str(e)}")
         finally:
             self.stop_llm_service()
 

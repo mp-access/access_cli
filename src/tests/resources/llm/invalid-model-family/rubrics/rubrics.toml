@@ -1,0 +1,9 @@
+[[rubrics]]
+id = "time_complexity_mentioned"
+title = "Mentioned the time complexity of both operations is O(n)"
+points = 0.5
+
+[[rubrics]]
+id = "asymptotically_equivalent"
+title = "Explained that both are asymptotically equivalent but in practice, reversing characters is slower"
+points = 0.5

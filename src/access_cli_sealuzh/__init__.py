@@ -49,16 +49,16 @@ def main():
         help = "recurse into nested structures (assignments/tasks) if applicable")
     parser.add_argument('-A', '--auto-detect', action='store_true', default=False,
         help = "attempt to auto-detect what is being validated")
-    parser.add_argument('--llm-api-key', type=str,
+    parser.add_argument('-k', '--llm-api-key', type=str,
         help = "API key for the LLM service. Create one at the corresponding service provider.")
-    parser.add_argument('--llm-keep-service', action=argparse.BooleanOptionalAction,
+    parser.add_argument('-K', '--llm-keep-service', action=argparse.BooleanOptionalAction,
         help = "Keep LLM service running after validation for further grading")
-    parser.add_argument('--llm-only', action=argparse.BooleanOptionalAction,
+    parser.add_argument('-L', '--llm-only', action=argparse.BooleanOptionalAction,
         help = "Only run LLM grading (for TAs designing tasks)")
-    parser.add_argument('--assistant-url',
+    parser.add_argument('-U', '--assistant-url',
         default="http://localhost:4000",
         help = "URL of the assistant service")
-    parser.add_argument('--llm-model', type=str,
+    parser.add_argument('-M', '--llm-model', type=str,
         help = "Model to use for LLM grading")
     args = parser.parse_args()
 

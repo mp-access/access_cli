@@ -76,6 +76,7 @@ task_information_schema = {
 # - if each file in files actually exists
 # - that none of the grading or solution files are editable or visible
 # - that editable files are also visible
+# - that if you use llm evaluation, all defined files in the config are also present as files (submission, rubrics, examples, solution)
 # - OPTIONALLY: that the run, test and grade commands execute correctly
 task_schema = {
     "slug":         {'required': True, 'type': 'string'},
