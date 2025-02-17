@@ -1,0 +1,49 @@
+slug = "string_manipulation"
+
+
+max_attempts = 6
+refill = 43200 # 12 hours
+max_points = 2
+
+[information.en]
+title = "String Manipulation in Python"
+instructions_file = "instructions_en.md"
+
+[evaluator]
+docker_image = "python:latest"
+run_command = "python -m task.script"
+test_command = "python -m unittest discover -v task"
+grade_command = "python -m grading.tests"
+
+[llm]
+submission = "task/explanation.md"
+rubrics = "rubrics/rubrics.toml" # This file contains the rubrics for the task to guide the model
+examples = "grading/examples.toml" # This file contains examples of the task for the model to learn from
+solution = "solution/explanation.md" # This is the solution file used to guide the model
+cot = true # This will add "think step by step" to the context prompt in order to encourage the model to think step by step
+voting = 3 # This allows for the results to be evaluated 3 times, and the most common result is chosen. This setting will increase the time it takes to grade the task!
+post = "grading/post.md" # Adds further instruction at the end of the context prompt
+# pre = "grading/pre.md" # Adds further instruction in front of the context prompt
+# prompt = "grading/prompt.md" # replaces the context prompt with the content of the file. This is only for advanced usages!
+temperature = 0.2 # Decides the randomness of the gpt model
+model_family = "claude" # gpt or claude
+model = "claude-3-5-sonnet-latest" # gpt-4o, gpt-4o-mini, claude-3-5-sonnet-latest, etc.
+max_points = 1 # Max points for the sub-task that is passed to the model
+
+[files]
+visible = [
+  "task/script.py",
+  "task/explanation.md",
+  "rubrics/rubrics.toml"
+]
+editable = [
+  "task/script.py",
+  "task/explanation.md",
+]
+grading = [
+  "grading/tests.py",
+]
+solution = [
+  "solution/script.py",
+  "solution/explanation.md",
+]

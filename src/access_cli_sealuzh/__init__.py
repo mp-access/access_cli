@@ -4,14 +4,6 @@ import sys
 
 def main():
     from access_cli_sealuzh.main import AccessValidator, autodetect
-
-    # TODO GBAI:
-    # * add option to pass API KEY
-    # * add additional options the service might need (model selection?)
-    # * by default, the AI service should stop after validation, add an option
-    #   to keep the service running
-    # * ensure that there is some combination of options such that ONLY the AI
-    #   grading is executed, since TAs will be relying on it to design the task
     parser = argparse.ArgumentParser(
         prog = 'access-cli',
         description = 'Validate ACCESS course configurations using the CLI')
@@ -49,6 +41,17 @@ def main():
         help = "recurse into nested structures (assignments/tasks) if applicable")
     parser.add_argument('-A', '--auto-detect', action='store_true', default=False,
         help = "attempt to auto-detect what is being validated")
+    parser.add_argument('-k', '--llm-api-key', type=str,
+        help = "API key for the LLM service. Create one at the corresponding service provider.")
+    parser.add_argument('-K', '--llm-keep-service', action=argparse.BooleanOptionalAction,
+        help = "Keep LLM service running after validation for further grading")
+    parser.add_argument('-L', '--llm-only', action=argparse.BooleanOptionalAction,
+        help = "Only run LLM grading (for TAs designing tasks)")
+    parser.add_argument('-U', '--assistant-url',
+        default="http://localhost:4000",
+        help = "URL of the assistant service")
+    parser.add_argument('-M', '--llm-model', type=str,
+        help = "Model to use for LLM grading")
     args = parser.parse_args()
 
 

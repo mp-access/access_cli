@@ -76,8 +76,9 @@ task_information_schema = {
 # - if each file in files actually exists
 # - that none of the grading or solution files are editable or visible
 # - that editable files are also visible
+# - that if you use llm evaluation, all defined files in the config are also present as files (submission, rubrics, examples, solution)
 # - OPTIONALLY: that the run, test and grade commands execute correctly
-task_schema = { # TODO GBAI: add additional fields
+task_schema = {
     "slug":         {'required': True, 'type': 'string'},
     "authors":      {'required': False, 'type': 'list',
                      'schema': {'type': 'string'}},
@@ -102,6 +103,21 @@ task_schema = { # TODO GBAI: add additional fields
                                      'schema': {'type': 'string'}},
                      "persist":     {'required': False, 'type': 'list',
                                      'schema': {'type': 'string'}}
-                    }}
+                    }},
+    "llm": {'required': False, 'type': 'dict', 'schema': {
+        'submission': {'required': True, 'type': 'string'},
+        'rubrics': {'required': False, 'type': 'string'},
+        'examples': {'required': False, 'type': 'string'},
+        'solution': {'required': False, 'type': 'string'},
+        'cot': {'required': False, 'type': 'boolean'},
+        'voting': {'required': False, 'type': 'integer'},
+        'post': {'required': False, 'type': 'string'},
+        'pre': {'required': False, 'type': 'string'},
+        'prompt': {'required': False, 'type': 'string'},
+        'temperature': {'required': False, 'type': 'float'},
+        'model': {'required': False, 'type': 'string'},
+        'max_points': {'required': False, 'type': 'float'},
+        'model_family': {'required': False, 'type': 'string'}
+    }},
 }
 
