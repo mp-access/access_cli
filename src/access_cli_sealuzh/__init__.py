@@ -1,6 +1,7 @@
 import argparse
 import os
 import sys
+import subprocess
 
 def main():
     from access_cli_sealuzh.main import AccessValidator, autodetect
@@ -44,7 +45,6 @@ def main():
         help = "attempt to auto-detect what is being validated")
     args = parser.parse_args()
 
-
     if not args.solve_command:
         if args.grade_solution:
             print("If --grade-solution is passed, --solve-command must be provided")
@@ -79,6 +79,19 @@ def main():
             args.user = str(os.getuid())
         except AttributeError:
             args.user = None
+
+    if (args.run or args.test or args.test_solution or args.grade_solution or
+        args.grade_template or args.llm_api_key):
+        try:
+            instructions = ["docker", "run", "--rm"]
+            if args.user is not None:
+                instructions.extend(["--user", args.user])
+            instructions.append("hello-world")
+            subprocess.check_output(instructions)
+        except subprocess.CalledProcessError:
+            print("Docker is required for this validation, but it's not working correctly: exiting.")
+            sys.exit(14)
+
 
 
     logger = AccessValidator(args).run()
