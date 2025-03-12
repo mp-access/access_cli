@@ -30,7 +30,7 @@ def main():
         action=argparse.BooleanOptionalAction,
         help = "grade the solution and expect max-points to be awarded.")
     parser.add_argument('-s', '--solve-command', type=str,
-        help = "shell command which solves the exercise")
+        help = "shell command which solves the exercise (e.g.: 'cp -R solution/* task/' or 'xcopy solution\* task\ /E /I /Y'")
     parser.add_argument('-f', '--global-file', action='append', default=[],
         help = "global files (relative to course root)")
     parser.add_argument('-C', '--course-root',
@@ -38,6 +38,9 @@ def main():
     parser.add_argument('-v', '--verbose', default=False,
         action=argparse.BooleanOptionalAction,
         help = "show output when running executions")
+    parser.add_argument('-D', '--debug', default=False,
+        action=argparse.BooleanOptionalAction,
+        help = "print debug information")
     parser.add_argument('-R', '--recursive',
         action=argparse.BooleanOptionalAction,
         help = "recurse into nested structures (assignments/tasks) if applicable")
@@ -81,7 +84,7 @@ def main():
             args.user = None
 
     if (args.run or args.test or args.test_solution or args.grade_solution or
-        args.grade_template or args.llm_api_key):
+        args.grade_template):
         try:
             instructions = ["docker", "run", "--rm"]
             if args.user is not None:
@@ -107,7 +110,28 @@ def main():
             if messages:
                 for m in messages:
                     print(f" ✗ {m}")
-        sys.exit(1)
 
+    if args.verbose and (
+            False is args.grade_solution or
+            False is args.test_solution or
+            False is args.test or
+            False is args.run or
+            False is args.grade_template
+        ):
+        print(f"❰ Warnings ❱")
+        if False is args.grade_solution:
+            print("grade_command on solution has not been validated! Add -s '<solving command>' to validate.")
+        if False is args.test_solution:
+            print("test_command on solution has not been validated! Add -s '<solving command>' to validate.")
+        if False is args.test:
+            print("test_command on template has not been validated!")
+        if False is args.run:
+            print("run_command on template has not been validated!")
+        if False is args.grade_template:
+            print("grade_command on template has not been validated!")
+        print(" -- Please refer to access-cli -h and README.md --")
+
+    if logger.error_results():
+        sys.exit(1)
     sys.exit(0)
 

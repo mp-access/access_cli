@@ -27,9 +27,9 @@ def autodetect(args):
     args.level = level
 
     # set autodetect defaults if not set manually
-    if args.test_solution == None: args.test_solution = True
+    if args.test_solution == None: args.test_solution = args.solve_command != None
     if args.grade_template == None: args.grade_template = True
-    if args.grade_solution == None: args.grade_solution = True
+    if args.grade_solution == None: args.grade_solution = args.solve_command != None
     if args.recursive == None: args.recursive = True
     if args.run == None: args.run = 0
     if args.test == None: args.test = 1
@@ -54,8 +54,9 @@ def autodetect(args):
         args.global_file.update(set(course_config["global_files"]["grading"]))
         args.course_root = course_root
 
-    print("Using the following auto-detected arguments:")
-    print(str(args)[len("Namespace("):-1])
+    if args.debug:
+        print("Using the following auto-detected arguments:")
+        print(str(args)[len("Namespace("):-1])
     return args
 
 class AccessValidator:
