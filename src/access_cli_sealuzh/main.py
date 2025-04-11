@@ -104,11 +104,12 @@ class AccessValidator:
             elif not os.path.isfile(os.path.join(course, name, "config.toml")):
                 self.logger.error(f"{path} references assignment without config.toml: {name}")
         # - if referenced examples exist and contain config.toml
-        for name in config["examples"]:
-            if not os.path.isdir(os.path.join(course, name)):
-                self.logger.error(f"{path} references non-existing example: {name}")
-            elif not os.path.isfile(os.path.join(course, name, "config.toml")):
-                self.logger.error(f"{path} references example without config.toml: {name}")
+        if "examples" in config:
+            for name in config["examples"]:
+                if not os.path.isdir(os.path.join(course, name)):
+                    self.logger.error(f"{path} references non-existing example: {name}")
+                elif not os.path.isfile(os.path.join(course, name, "config.toml")):
+                    self.logger.error(f"{path} references example without config.toml: {name}")
         # - if override start is before override end
         if "override_start" in config["visibility"] and "override_end" in config["visibility"]:
             if config["visibility"]["override_start"] >= config["visibility"]["override_end"]:
@@ -129,10 +130,12 @@ class AccessValidator:
                         self.logger.error(f"{path} global files references non-existing file: {file}")
         # Check assignments if recursive
         if self.args.recursive:
-            for assignment in config["assignments"]:
-                self.validate_assignment(course, assignment)
-            for example in config["examples"]:
-                self.validate_task(course_dir=course, assignment_dir=None, task_dir=example)
+            if "assignments" in config:
+                for assignment in config["assignments"]:
+                    self.validate_assignment(course, assignment)
+            if "examples" in config:
+                for example in config["examples"]:
+                    self.validate_task(course_dir=course, assignment_dir=None, task_dir=example)
 
     def validate_assignment(self, course_dir=None, assignment_dir=None):
         if course_dir == None:
@@ -213,10 +216,8 @@ class AccessValidator:
             for file in files:
                 if not os.path.isfile(os.path.join(task, file)):
                     self.logger.error(f"{path} files references non-existing file: {file}")
-        if config["type"] == "homework":
-        # - that grade_command is present for homework tasks
-            if "grade_command" not in config["evaluator"]:
-                self.logger.error(f"{path} missing grade_command")
+        if "grade_command" not in config["evaluator"]:
+            self.logger.error(f"{path} missing grade_command")
         # - that none of the grading or solution files are editable or visible
         for file in config["files"]["grading"]:
             if file in config["files"]["editable"]:
@@ -233,7 +234,7 @@ class AccessValidator:
             if file not in config["files"]["visible"]:
                 self.logger.error(f"{path} invisible file {file} marked as editable")
         # - OPTIONALLY: that the run, test and grade commands execute correctly
-        if type(self.args.run) == int:
+        if type(self.args.run) == int and "run_command" in config["evaluator"]:
             self.execute_command(task, config, "run_command", self.args.run)
         if type(self.args.test) == int and "test_command" in config["evaluator"]:
             self.execute_command(task, config, "test_command", self.args.test)

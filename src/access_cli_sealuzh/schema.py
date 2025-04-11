@@ -29,9 +29,9 @@ course_information_schema = {
 course_schema = {
     "slug":         {'required': True, 'type': 'string'},
     "logo":         {'required': False, 'type': 'string'},
-    "assignments":  {'required': True, 'type': 'list',
+    "assignments":  {'required': False, 'type': 'list',
                      'schema': {'type': 'string'}},
-    "examples":     {'required': True, 'type': 'list',
+    "examples":     {'required': False, 'type': 'list',
                      'schema': {'type': 'string'}},
     "visibility":   {'required': True, 'type': 'dict', 'schema':
                     {'default':        {'required': True, 'type': 'string',
@@ -88,14 +88,14 @@ task_schema = {
     "authors":      {'required': False, 'type': 'list',
                      'schema': {'type': 'string'}},
     "license":      {'required': False, 'type': 'string'},
-    "max_attempts": {'required': True, 'type': 'integer'},
+    "max_attempts": {'required': False, 'type': 'integer', 'default': 1},
     "refill":       {'required': False, 'type': 'integer'},
-    "max_points":   {'required': False, 'type': 'float'},
+    "max_points":   {'required': False, 'type': 'float', 'default': 1},
     "information":  {'required': True, 'type': 'dict'},
     "evaluator":    {'required': True, 'type': 'dict', 'schema':
                     {'docker_image':  {'required': True, 'type': 'string'},
                      'run_command':   {                  'type': 'string'},
-                     'grade_command': {'required': True, 'type': 'string'},
+                     'grade_command': {                  'type': 'string'},
                      'test_command':  {                  'type': 'string'}}},
     "files":        {'required': True, 'type': 'dict', 'schema':
                     {"visible":     {'required': True, 'type': 'list',
