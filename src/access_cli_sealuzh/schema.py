@@ -57,8 +57,8 @@ assignment_information_schema = {
 # - if at least "en" information is given (restriction to be lifted later)
 assignment_schema = {
     "slug":  {'required': True, 'type': 'string'},
-    "start": {'required': True, 'type': 'datetime'}, # TODO: will not be required in the future
-    "end":   {'required': True, 'type': 'datetime'}, # TODO: will not be required in the future
+    "start": {'required': True, 'type': 'datetime'},
+    "end":   {                  'type': 'datetime'},
     "tasks": {'required': True, 'type': 'list',
               'schema': {'type': 'string'}},
     "information":  {'required': True, 'type': 'dict'},

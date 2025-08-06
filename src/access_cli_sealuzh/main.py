@@ -160,7 +160,7 @@ class AccessValidator:
             elif not os.path.isfile(os.path.join(assignment, name, "config.toml")):
                 self.logger.error(f"{path} references task without config.toml: {name}")
         # - if start is before end
-        if config["start"] >= config["end"]:
+        if "end" in config and config["start"] >= config["end"]:
             self.logger.error(f"{path} start is after end")
         # - if at least "en" information is given (restriction to be lifted later)
         if "information" not in config or "en" not in config["information"]:
