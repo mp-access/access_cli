@@ -90,6 +90,7 @@ class AccessValidator:
         if not self.v.validate(config, course_schema):
             self.logger.error(f"{path} schema errors:\n\t{self.pp.pformat(self.v.errors)}")
             return
+        config = self.v.normalized(config, course_schema)
         self.logger.update_subject(f'{course} ({config["slug"]})')
         # MANUALLY CHECK:
         # - if referenced icon exists
@@ -103,6 +104,13 @@ class AccessValidator:
                 self.logger.error(f"{path} references non-existing assignment: {name}")
             elif not os.path.isfile(os.path.join(course, name, "config.toml")):
                 self.logger.error(f"{path} references assignment without config.toml: {name}")
+        # - if referenced examples exist and contain config.toml
+        if "examples" in config:
+            for name in config["examples"]:
+                if not os.path.isdir(os.path.join(course, name)):
+                    self.logger.error(f"{path} references non-existing example: {name}")
+                elif not os.path.isfile(os.path.join(course, name, "config.toml")):
+                    self.logger.error(f"{path} references example without config.toml: {name}")
         # - if override start is before override end
         if "override_start" in config["visibility"] and "override_end" in config["visibility"]:
             if config["visibility"]["override_start"] >= config["visibility"]["override_end"]:
@@ -123,8 +131,12 @@ class AccessValidator:
                         self.logger.error(f"{path} global files references non-existing file: {file}")
         # Check assignments if recursive
         if self.args.recursive:
-            for assignment in config["assignments"]:
-                self.validate_assignment(course, assignment)
+            if "assignments" in config:
+                for assignment in config["assignments"]:
+                    self.validate_assignment(course, assignment)
+            if "examples" in config:
+                for example in config["examples"]:
+                    self.validate_task(course_dir=course, assignment_dir=None, task_dir=example)
 
     def validate_assignment(self, course_dir=None, assignment_dir=None):
         if course_dir == None:
@@ -139,6 +151,7 @@ class AccessValidator:
         if not self.v.validate(config, assignment_schema):
             self.logger.error(f"{path} schema errors:\n\t{self.pp.pformat(self.v.errors)}")
             return
+        config = self.v.normalized(config, assignment_schema)
         self.logger.update_subject(f'{assignment} ({config["slug"]})')
         # MANUALLY CHECK:
         # - if referenced task exist and contain config.toml
@@ -148,7 +161,7 @@ class AccessValidator:
             elif not os.path.isfile(os.path.join(assignment, name, "config.toml")):
                 self.logger.error(f"{path} references task without config.toml: {name}")
         # - if start is before end
-        if config["start"] >= config["end"]:
+        if "end" in config and config["start"] >= config["end"]:
             self.logger.error(f"{path} start is after end")
         # - if at least "en" information is given (restriction to be lifted later)
         if "information" not in config or "en" not in config["information"]:
@@ -164,10 +177,12 @@ class AccessValidator:
                 self.validate_task(course_dir, assignment_dir, task)
 
     def validate_task(self, course_dir=None, assignment_dir=None, task_dir=None):
-        if course_dir == None and assignment_dir == None:
+        if course_dir is None and assignment_dir is None:
             task = task_dir
-        elif course_dir == None:
+        elif course_dir is None and assignment_dir is not None:
             task = os.path.join(assignment_dir, task_dir)
+        elif course_dir is not None and assignment_dir is None:
+            task = os.path.join(course_dir, task_dir)
         else:
             task = os.path.join(course_dir, assignment_dir, task_dir)
         self.print(f" > Validating task {task}", True)
@@ -178,6 +193,7 @@ class AccessValidator:
         if not self.v.validate(config, task_schema):
             self.logger.error(f"{path} schema errors:\n\t{self.pp.pformat(self.v.errors)}")
             return
+        config = self.v.normalized(config, task_schema)
         self.logger.update_subject(f'{task} ({config["slug"]})')
         # MANUALLY CHECK:
         # - if at least "en" information is given (restriction to be lifted later)
@@ -201,6 +217,8 @@ class AccessValidator:
             for file in files:
                 if not os.path.isfile(os.path.join(task, file)):
                     self.logger.error(f"{path} files references non-existing file: {file}")
+        if "grade_command" not in config["evaluator"]:
+            self.logger.error(f"{path} missing grade_command")
         # - that none of the grading or solution files are editable or visible
         for file in config["files"]["grading"]:
             if file in config["files"]["editable"]:
@@ -217,7 +235,7 @@ class AccessValidator:
             if file not in config["files"]["visible"]:
                 self.logger.error(f"{path} invisible file {file} marked as editable")
         # - OPTIONALLY: that the run, test and grade commands execute correctly
-        if type(self.args.run) == int:
+        if type(self.args.run) == int and "run_command" in config["evaluator"]:
             self.execute_command(task, config, "run_command", self.args.run)
         if type(self.args.test) == int and "test_command" in config["evaluator"]:
             self.execute_command(task, config, "test_command", self.args.test)
