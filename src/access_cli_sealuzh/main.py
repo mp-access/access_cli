@@ -238,7 +238,7 @@ class AccessValidator:
             self.execute_command(task, config, "run_command", self.args.run)
         if type(self.args.test) == int and "test_command" in config["evaluator"]:
             self.execute_command(task, config, "test_command", self.args.test)
-        if self.args.test_solution:
+        if self.args.test_solution and "test_command" in config["evaluator"]:
             self.execute_command(task, config, "test_command", 0, solve_command=self.args.solve_command)
         if self.args.grade_template:
             self.execute_grade_command(task, config, 0)
