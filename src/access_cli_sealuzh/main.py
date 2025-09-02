@@ -27,9 +27,9 @@ def autodetect(args):
     args.level = level
 
     # set autodetect defaults if not set manually
-    if args.test_solution == None: args.test_solution = True
+    if args.test_solution == None: args.test_solution = False
     if args.grade_template == None: args.grade_template = True
-    if args.grade_solution == None: args.grade_solution = True
+    if args.grade_solution == None: args.grade_solution = False
     if args.recursive == None: args.recursive = True
     if args.run == None: args.run = 0
     if args.test == None: args.test = 1
