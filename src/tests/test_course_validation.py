@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import unittest
+import os
 from types import SimpleNamespace
 from importlib.resources import files
 
@@ -9,7 +10,7 @@ class CourseValidationTests(unittest.TestCase):
     def validator(self, directory):
         from access_cli_sealuzh.main import AccessValidator
         args = SimpleNamespace(directory=str(directory), execute=False,
-                               global_file=set(), user="", test_solution=False,
+                               global_file=set(), user=os.environ.get("DOCKER_USER", ""), test_solution=False,
                                run=None, test=None, verbose=False,
                                grade_template=False, grade_solution=False,
                                level="course", recursive=False)

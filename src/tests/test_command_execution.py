@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import unittest
+import os
 from types import SimpleNamespace
 from importlib.resources import files
 
@@ -11,7 +12,7 @@ class CommandExecutionTests(unittest.TestCase):
         from access_cli_sealuzh.main import AccessValidator
         args = SimpleNamespace(directory=str(directory), execute=True, verbose=False,
                                global_file=global_file, course_root=course_root,
-                               run=0 if "run" in commands else None, user="",
+                               run=0 if "run" in commands else None, user=os.environ.get("DOCKER_USER", ""),
                                test=1 if "test" in commands else None,
                                test_solution=True if "test_solution" in commands else False,
                                grade_template=True if "template" in commands else False,

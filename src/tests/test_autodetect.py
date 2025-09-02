@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import unittest
+import os
 from types import SimpleNamespace
 from importlib.resources import files
 
@@ -9,10 +10,10 @@ class AutoDetectionTests(unittest.TestCase):
     def validator(self, directory):
         from access_cli_sealuzh.main import AccessValidator, autodetect
         args = SimpleNamespace(directory=str(directory), course_root=None,
-                               solve_command="rm -R task; cp -R solution task",
+                               solve_command="cp -R solution/* task/",
                                test_solution = False,
-                               grade_template = False, grade_solution=False,
-                               global_file=set(), user="", run=0, test=1,
+                               grade_template = True, grade_solution=False,
+                               global_file=set(), user=os.environ.get("DOCKER_USER", ""), run=0, test=1,
                                verbose=False, recursive=False)
         args = autodetect(args)
         return AccessValidator(args)
@@ -30,5 +31,6 @@ class AutoDetectionTests(unittest.TestCase):
     def test_task(self):
         validator = self.validator(files('tests.resources.autodetect.valid-course.assignment').joinpath('task'))
         errors = validator.run().error_list()
+        print(errors)
         self.assertEqual(0, len(errors))
 
