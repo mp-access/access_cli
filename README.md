@@ -4,71 +4,51 @@ A tool for verifying ACCESS course configurations locally.
 
 ## Installation
 
+First, make sure you have docker installed and working correctly:
+
+```
+docker run hello-world
+```
+
+Then, install `access-cli`:
+
 ```
 pip install access-cli-sealuzh
 ```
 
 ## Quick start:
 
-Make sure you have docker installed and working correctly:
+The most common way to run access-cli is from a task directory like so:
 
 ```
-docker run hello-world
+access-cli -Avs "cp -R solution/* task/"
 ```
 
-Using auto-detection (`-A`), access-cli will validate an entire course, all tasks in an assignment, or an individual task, depending on your current working directory. For example, if you're in an assignment directory, it will validate the entire assignment.
-
-**Note:** auto-detection assumes a directory tree structure where the course contains subdirectories for each assignment, and each assignment contains subdirectories for each task.
-
-You typically want verbose output (`-v`). Thus, running
+or on Windows:
 
 ```
-access-cli -vA
+access-cli -Avs "xcopy solution\* task\ /E /I /Y"
 ```
 
-will perform the following checks:
+This will perform the following validation checks:
+ * Is the `config.toml` valid?
+ * Does the run command exit with code 0 using the code template
+ * Does the test command exit with code 1 using the code template
+ * Does the grading command exit with code 1 using the code template, and does it award 0 points?
+ * Does the grading command exit with code 0 using the sample solution, and does it award full points?
 
- * Does the run command using the *template* return exit code 0?
- * Does the test command using the *template* return exit code 1?
- * Does the grading command using the *template* return exit code 1 and award 0 points?
-
-However, to also validate sample solutions, you need to provide a command which will *solve* each task (`-s <solving command>`) . *Solving* typically means overwriting the template with the sample solution.
-
-For example, on Linux or Mac, you may run:
-
-```
-access-cli -vAs "cp -R solution/* task/"
-```
-
-On Windows:
+The `-s` flag tells access-cli how to "solve" a task. In this case, it means copying over the sample solution to the task directory before running the grading.
+Without providing `-s`, access-cli will not check whether the grading works on a correct solution. Without `-v`, only a summary of the results will be shown.
 
 ```
-access-cli -vAs "xcopy solution\* task\ /E /I /Y"
+access-cli -A
 ```
-
-This will perform a full validation, also including:
-
- * Does the test command using the *solution* return exit code 0?
- * Does the grading command using the *solution* return exit code 0 and award full points?
 
 If you have problems relating to docker prermissions, you may need to specify an empty user or a specific user, e.g.:
-
 ```
-access-cli -Av -u=
+access-cli -A -u=
 # or
-access-cli -Av -u=1001
-```
-
-For example, when successfully validation a course, access-cli will printing something similar to the following at the end of execution:
-
-```
-❰ Validation successful ❱
- ✓ . (access-mock-course)
- ✓ ./01_intro (hello)
- ✓ ./01_intro/hello_world (hello-world)
- ✓ ./02_basics (basics)
- ✓ ./02_basics/variable_assignment (variable-assignment)
- ✓ ./02_basics/friendly_pairs (friendly-pairs)
+access-cli -A -u=1001
 ```
 
 ## Usage
@@ -189,7 +169,7 @@ the template and the solution (and validation fails, because the solution awards
 │  Executing run_command in python:latest.  │
 │  Expecting return code 0                  │
 ├───────────────────────────────────────────╯
-│python task/script.py 
+│python task/script.py
 ├─────╼ return code: 0
 ├─────╼ stdout:
 │0
@@ -199,7 +179,7 @@ the template and the solution (and validation fails, because the solution awards
 │  Executing test_command in python:latest.  │
 │  Expecting return code 1                   │
 ├────────────────────────────────────────────╯
-│python -m unittest discover -v task 
+│python -m unittest discover -v task
 ├─────╼ return code: 1
 ├─────╼ stdout:
 │0
@@ -226,7 +206,7 @@ the template and the solution (and validation fails, because the solution awards
 │  Executing test_command in python:latest.         │
 │  Expecting return code 0                          │
 ├───────────────────────────────────────────────────╯
-│python -m unittest discover -v task 
+│python -m unittest discover -v task
 ├─────╼ return code: 0
 ├─────╼ stdout:
 ├─────╼ stderr:
@@ -240,7 +220,7 @@ the template and the solution (and validation fails, because the solution awards
 ╭─────────────────────────────────────────────╮
 │  Executing grade_command in python:latest.  │
 ├─────────────────────────────────────────────╯
-│python -m grading.tests 
+│python -m grading.tests
 ├─────╼ return code: 0
 ├─────╼ stdout:
 │0
@@ -307,7 +287,7 @@ the template and the solution (and validation fails, because the solution awards
 │  Solving task by running cp -R solution/* task/.  │
 │  Executing grade_command in python:latest.        │
 ├───────────────────────────────────────────────────╯
-│python -m grading.tests 
+│python -m grading.tests
 ├─────╼ return code: 0
 ├─────╼ stdout:
 ├─────╼ stderr:
@@ -336,12 +316,20 @@ access-cli -l task -d ./ -r0 -t1 -gGvs "cp -R solution/* task/" -f "universal/ha
 
 will copy `../../universal/harness.py` into the docker container before grading.
 
-
 ## Development
 
 To install access-cli based on local code (adjust the version when necessary):
 
 ```
-rm -R venv; python -m build; python -m venv venv; ./venv/bin/python -m pip install dist/access_cli_sealuzh-0.1.3-py3-none-any.whl
+rm -R venv; python -m build; python -m venv venv; ./venv/bin/python -m pip install dist/access_cli_sealuzh-0.1.9-py3-none-any.whl
 ```
+
+To run tests:
+
+```
+cd src
+python -m unittest discover -v tests
+```
+
+Set the `DOCKER_USER` environment variable if your docker needs to be run using a specific user (typically yourself, e.g. `DOCKER_USER=1000 python -m unittest discover -v tests`)
 
