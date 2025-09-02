@@ -18,27 +18,37 @@ pip install access-cli-sealuzh
 
 ## Quick start:
 
-Run validation on the current (and all nested) folders:
+The most common way to run access-cli is from a task directory like so:
+
 ```
-access-cli -Av
+access-cli -Avs "cp -R solution/* task/"
+```
+
+or on Windows:
+
+```
+access-cli -Avs "xcopy solution\* task\ /E /I /Y"
+```
+
+This will perform the following validation checks:
+ * Is the `config.toml` valid?
+ * Does the run command exit with code 0 using the code template
+ * Does the test command exit with code 1 using the code template
+ * Does the grading command exit with code 1 using the code template, and does it award 0 points?
+ * Does the grading command exit with code 0 using the sample solution, and does it award full points?
+
+The `-s` flag tells access-cli how to "solve" a task. In this case, it means copying over the sample solution to the task directory before running the grading.
+Without providing `-s`, access-cli will not check whether the grading works on a correct solution. Without `-v`, only a summary of the results will be shown.
+
+```
+access-cli -A
 ```
 
 If you have problems relating to docker prermissions, you may need to specify an empty user or a specific user, e.g.:
 ```
-access-cli -Av -u=
+access-cli -A -u=
 # or
-access-cli -Av -u=1001
-```
-
-To check if the sample solutions work correctly by providing a command that replaces templates with solutions:
-
-```
-access-cli -AvGs "cp -R solution/* task/"
-```
-
-If you use the *global files* feature, the global files must be listed relative to the course root (unless running in the course root), for example:
-```
-access-cli -AvGs "cp -R solution/* task/" -f universal/harness.py
+access-cli -A -u=1001
 ```
 
 ## Usage
@@ -60,7 +70,7 @@ designing tasks. In particular it can:
 All executions are done in docker containers.
 
 In its simplest form, `access-cli -A` will, by default, validate configuration
-files and execute the run and test commands expecting a 0 return code. It will
+files and execute the run and test commands expecting 0 and 1 return codes respectively. It will
 also execute the grading command on the template and expect zero points. It will
 attempt to read the parent course/assignment config to determine global files if
 possible. This will only work if you use a flat course/assignment/task directory
@@ -108,7 +118,7 @@ Here's one for a task where file attributes are invalid:
  ✗ ./config.toml grading file grading.py marked as visible
 ```
 
-Here, a course and all its assignemtns and tasks are verified recursively with
+Here, a course and all its assignments and tasks are verified recursively with
 validation succeeding:
 
 ```
@@ -254,4 +264,13 @@ To install access-cli based on local code (adjust the version when necessary):
 ```
 rm -R venv; python -m build; python -m venv venv; ./venv/bin/python -m pip install dist/access_cli_sealuzh-0.1.3-py3-none-any.whl
 ```
+
+To run tests:
+
+```
+cd src
+python -m unittest discover -v tests
+```
+
+Set the `DOCKER_USER` environment variable if your docker needs to be run using a specific user (typically yourself, e.g. `DOCKER_USER=1000 python -m unittest discover -v tests`)
 
